@@ -1,0 +1,22 @@
+{
+   "name":"skynet",
+   "description":"skynet network and api",
+   "version":"0.0.1",
+   "homepage":"http://github.com/chrismatthieu/skynet-npm",
+   "repository":"git://github.com/chrismatthieu/skynet-npm",
+   "author":"Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
+   "main":"./index.js",
+   
+   "dependencies":{
+      
+   },
+   "engines":{
+      "node":">= 0.4.0"
+   },
+   "licenses":[
+      {
+         "type":"MIT",
+         "url":"http://github.com/chrismatthieu/skynet-npm/raw/master/LICENSE"
+      }
+   ]
+}
