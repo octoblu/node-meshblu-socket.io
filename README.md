@@ -43,4 +43,10 @@ conn.send({
     "contra":"is cool"
   }
 });
+
+conn.update({
+  "uuid":"ad698900-2546-11e3-87fb-c560cb0ca47b", 
+  "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9", 
+  "armed":false
+});
 ```
