@@ -1,14 +1,21 @@
 {
    "name":"skynet",
    "description":"skynet network and api",
-   "version":"0.0.1",
+   "version":"0.0.2",
    "homepage":"http://github.com/chrismatthieu/skynet-npm",
    "repository":"git://github.com/chrismatthieu/skynet-npm",
    "author":"Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
    "main":"./index.js",
-   
+   "keywords": [
+    "iot",
+    "internet of things",
+    "arduino",
+    "tessel",
+    "raspberrypi",
+    "skynet"
+   ],   
    "dependencies":{
-      
+      "socket.io-client": "*"
    },
    "engines":{
       "node":">= 0.4.0"
