@@ -1,7 +1,7 @@
 {
    "name":"skynet",
    "description":"skynet network and api",
-   "version":"0.0.2",
+   "version":"0.0.3",
    "homepage":"http://github.com/chrismatthieu/skynet-npm",
    "repository":"git://github.com/chrismatthieu/skynet-npm",
    "author":"Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
