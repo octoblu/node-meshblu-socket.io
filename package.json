@@ -1,9 +1,9 @@
 {
    "name":"skynet",
    "description":"Skynet IoT network and api",
-   "version":"0.0.9",
-   "homepage":"http://github.com/chrismatthieu/skynet-npm",
-   "repository":"git://github.com/chrismatthieu/skynet-npm",
+   "version":"0.0.10",
+   "homepage":"http://skynet.im",
+   "repository":"git://github.com/skynetim/npm",
    "author":"Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
    "main":"./index.js",
    "keywords": [
@@ -23,7 +23,7 @@
    "licenses":[
       {
          "type":"MIT",
-         "url":"http://github.com/chrismatthieu/skynet-npm/raw/master/LICENSE"
+         "url":"http://github.com/skynetim/npm/raw/master/LICENSE"
       }
    ]
 }

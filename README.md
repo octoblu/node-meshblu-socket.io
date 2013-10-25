@@ -6,23 +6,23 @@ SS      kk  kk yy   yy nn nnn    eee  tt
  SSSSS  kk  kk      yy nn   nn  eeeee  tttt 
                 yyyyy                         
 ```
-======
 
 Phase 1 - Build a network and realtime API for enabling machine-to-machine communications.
 
 Here are several quick screencasts that demostrate what you can do with Skynet:
 
-[POC Video 1](http://www.youtube.com/watch?v=cPs1JNFyXjk)
+[Screencast 1: What is Skynet?](http://www.youtube.com/watch?v=cPs1JNFyXjk)
 
-[POC Video 2](http://www.youtube.com/watch?v=SzaTPiaDDQI)
+[Screencast 2: Introducing an Arduino](http://www.youtube.com/watch?v=SzaTPiaDDQI)
 
-[POC Video 3](http://www.youtube.com/watch?v=TB6RyzT10EA)
+[Screencast 3: Security device tokens added](http://www.youtube.com/watch?v=TB6RyzT10EA)
 
-[POC Video 4](http://www.youtube.com/watch?v=0WjNG6AOcXM)
+[Screencast 4: Node.JS NPM module released](http://www.youtube.com/watch?v=0WjNG6AOcXM)
+
+[Screencast 5: PubSub feature added to device UUID channels](https://www.youtube.com/watch?v=SL_c1MSgMaw)
 
 
 Example
-#######
 
 ```
 var skynet = require('skynet');
@@ -76,7 +76,7 @@ conn.on('ready', function(data){
     console.log('disconnected from skynet');
   });
 
-  // Register a device
+  // Register a device (note: you can leave off the token to have skynet generate one for you)
   conn.register({
     "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9", 
     "type": "drone"
