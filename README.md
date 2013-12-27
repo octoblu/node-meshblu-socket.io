@@ -30,10 +30,11 @@ Example
 var skynet = require('skynet');
 
 var conn = skynet.createConnection({
-  "host":"localhost",
-  "port": 3000,
+  "host":"http://skynet.im",
+  "port": 80,
   "uuid": "ad698900-2546-11e3-87fb-c560cb0ca47b",
-  "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9"
+  "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
+  "qos": 0 // MQTT Quality of Service (0=no confirmation, 1=confirmation, 2=N/A)
 });
 
 conn.on('notReady', function(data){
@@ -61,17 +62,29 @@ conn.on('ready', function(data){
   });  
 
   // Send and receive messages
-  conn.send({
-    "devices": "all",
+  conn.message({
+    "devices": "*",
+    "message": {
+      "skynet":"online"
+    }
+  });
+  conn.message({
+    "devices": "0d3a53a0-2a0b-11e3-b09c-ff4de847b2cc",
+    "message": {
+      "skynet":"online"
+    }
+  });
+  conn.message({
+    "devices": ["0d3a53...847b2cc", "11123...44567"],
     "message": {
       "skynet":"online"
     }
   });
 
-  conn.on('message', function(data){
-    console.log('status received');
-    console.log(data);
+  conn.on('message', function(channel, message){
+    console.log('message received', channel, message);
   });
+
 
   // Event triggered when device loses connection to skynet
   conn.on('disconnect', function(data){
