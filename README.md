@@ -65,21 +65,21 @@ conn.on('ready', function(data){
   // Send and receive messages
   conn.message({
     "devices": "*",
-    "message": {
+    "payload": {
       "skynet":"online"
     },
     "qos": 0
   });
   conn.message({
     "devices": "0d3a53a0-2a0b-11e3-b09c-ff4de847b2cc",
-    "message": {
+    "payload": {
       "skynet":"online"
     },
     "qos": 0
   });
   conn.message({
     "devices": ["0d3a53...847b2cc", "11123...44567"],
-    "message": {
+    "payload": {
       "skynet":"online"
     },
     "qos": 0
