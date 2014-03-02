@@ -1,7 +1,7 @@
 {
    "name":"skynet",
    "description":"Skynet IoT network and API",
-   "version":"0.0.21",
+   "version":"0.0.22",
    "homepage":"http://skynet.im",
    "repository":"git://github.com/skynetim/npm",
    "author":"Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
@@ -13,7 +13,7 @@
     "tessel",
     "raspberrypi",
     "skynet"
-   ],   
+   ],
    "dependencies":{
       "socket.io-client": "*",
       "mqtt": "*"
