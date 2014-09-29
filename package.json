@@ -1,7 +1,7 @@
 {
   "name": "skynet",
   "description": "Skynet IoT network and API",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "homepage": "http://skynet.im",
   "repository": "git://github.com/skynetim/npm",
   "author": "Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
@@ -15,6 +15,7 @@
     "skynet"
   ],
   "dependencies": {
+    "lodash": "^2.4.1",
     "socket.io-client": "1.0.6"
   },
   "engines": {
