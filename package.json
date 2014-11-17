@@ -1,10 +1,10 @@
 {
-  "name": "skynet",
-  "description": "Skynet IoT network and API",
-  "version": "1.8.1",
-  "homepage": "http://skynet.im",
-  "repository": "git://github.com/skynetim/npm",
-  "author": "Chris Matthieu <chris@matthieu.us> (http://chrismatthieu.com/)",
+  "name": "meshblu",
+  "description": "Meshblu IoT network and API",
+  "version": "1.8.2",
+  "homepage": "http://developer.octoblu.com",
+  "repository": "git://github.com/octoblu/npm",
+  "author": "Octoblu",
   "main": "./index.js",
   "keywords": [
     "iot",
@@ -24,7 +24,7 @@
   "licenses": [
     {
       "type": "MIT",
-      "url": "http://github.com/skynetim/npm/raw/master/LICENSE"
+      "url": "http://github.com/octoblu/npm/raw/master/LICENSE"
     }
   ]
 }
