@@ -1,0 +1,30 @@
+sudo: false
+language: node_js
+node_js:
+  - '0.10'
+deploy:
+  - provider: s3
+    access_key_id: AKIAIT4X4NDGM2WVL6VA
+    secret_access_key:
+      secure: HRl5NXs+NxzABdt/uaBfoiPeJsIJUEePPq8fq/R0gEdyFUH01WSf7MA6yrMqelNvnWuE539leLKcfR5JcqyDdyRObc4gKg9mHDU6TGVKguO/bQrtdoRwPy1lXWTR1ndX7VlGuTPiISMXAHaTbYbGBO3srEwwptpud8CH3468cYg=
+    bucket: meshblu-client
+    region: us-west-2
+    skip_cleanup: true
+    local-dir: deploy
+    upload-dir: js
+    on:
+      tags: true
+      all_branches: true
+  - provider: npm
+    skip_cleanup: true
+    clean_up: false
+    email: jade.meskill@gmail.com
+    api_key:
+      secure: ObH1CPOBhpHoOHMfoaeTuyniAxulUH6g4MixDJIbrVApQ1aCCdetBwsj76GBj9zZH4pVjOPlppzYLzJy0Md1GAuSV8OzChhC3EkVcv4xbDbieYRa71OmsSnoSQzdt6y99Pf6jekrjXvhrpPtLof5zi4IsWvOQ/Q2Jr6QlnVCnTc=
+    on:
+      tags: true
+      all_branches: true
+before_deploy:
+  - npm install ws browserify
+  - mkdir deploy
+  - node_modules/.bin/browserify -s skynet index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
