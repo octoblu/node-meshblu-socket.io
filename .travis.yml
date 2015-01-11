@@ -27,4 +27,4 @@ deploy:
 before_deploy:
   - npm install ws browserify
   - mkdir -p deploy/$TRAVIS_TAG
-  - node_modules/.bin/browserify -s skynet index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
+  - node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
