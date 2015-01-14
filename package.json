@@ -1,11 +1,14 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "homepage": "http://developer.octoblu.com",
   "repository": "git://github.com/octoblu/npm",
   "author": "Octoblu",
   "main": "./index.js",
+  "scripts": {
+    "test": "mocha"
+  },
   "keywords": [
     "iot",
     "internet of things",
@@ -26,5 +29,12 @@
       "type": "MIT",
       "url": "http://github.com/octoblu/npm/raw/master/LICENSE"
     }
-  ]
+  ],
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "coffee-script": "^1.8.0",
+    "mocha": "^2.1.0",
+    "sinon": "^1.12.2",
+    "sinon-chai": "^2.6.0"
+  }
 }
