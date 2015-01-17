@@ -1,11 +1,8 @@
-```
- SSSSS  kk                            tt
-SS      kk  kk yy   yy nn nnn    eee  tt
- SSSSS  kkkkk  yy   yy nnn  nn ee   e tttt  
-     SS kk kk   yyyyyy nn   nn eeeee  tt
- SSSSS  kk  kk      yy nn   nn  eeeee  tttt
-                yyyyy
-```
+# meshblu-npm
+
+[![Build Status](https://travis-ci.org/octoblu/meshblu-npm.svg?branch=master)](https://travis-ci.org/octoblu/meshblu-npm)
+[![Code Climate](https://codeclimate.com/github/octoblu/meshblu-npm/badges/gpa.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
+[![Test Coverage](https://codeclimate.com/github/octoblu/meshblu-npm/badges/coverage.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 
 Phase 1 - Build a network and realtime API for enabling machine-to-machine communications.
 

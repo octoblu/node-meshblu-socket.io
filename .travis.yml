@@ -2,6 +2,8 @@ sudo: false
 language: node_js
 node_js:
   - '0.10'
+notifications:
+  flowdock: e7454f5285e7b9ab67009802d5560490
 deploy:
   - provider: s3
     access_key_id: AKIAIT4X4NDGM2WVL6VA
@@ -28,3 +30,8 @@ before_deploy:
   - npm install ws browserify
   - mkdir -p deploy/$TRAVIS_TAG
   - node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
+addons:
+  code_climate:
+    repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
+after_script:
+  - cat coverage/lcov.info | codeclimate
