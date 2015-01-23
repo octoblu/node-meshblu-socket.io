@@ -7,7 +7,7 @@
   "author": "Octoblu",
   "main": "./index.js",
   "scripts": {
-    "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec"
+    "test": "mocha"
   },
   "keywords": [
     "iot",
@@ -19,6 +19,7 @@
   ],
   "dependencies": {
     "lodash": "^2.4.1",
+    "node-rsa": "^0.2.13",
     "socket.io-client": "^1.2.1"
   },
   "engines": {
