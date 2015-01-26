@@ -18,6 +18,7 @@
     "skynet"
   ],
   "dependencies": {
+    "debug": "^2.1.1",
     "lodash": "^2.4.1",
     "node-rsa": "^0.2.13",
     "socket.io-client": "^1.2.1"
