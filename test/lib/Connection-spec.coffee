@@ -79,6 +79,7 @@ describe 'Connection', ->
 
         describe 'when getPublicKey returns with a public key', ->
           beforeEach ->
+            @sut.message = sinon.stub()
             @publicKey = encrypt: sinon.stub().returns '54321'
             @sut.getPublicKey.yields null, @publicKey
 
@@ -88,7 +89,6 @@ describe 'Connection', ->
 
           describe 'when publicKey.encrypt returns with a buffer of "12345"', ->
             beforeEach ->
-              @sut.message = sinon.spy @sut.message
               @publicKey.encrypt.returns new Buffer '12345',
 
             it 'should call message with an encrypted payload', ->
@@ -117,21 +117,21 @@ describe 'Connection', ->
 
       describe 'when called', ->
         beforeEach () ->
-          @sut.device = sinon.stub()
+          @sut.socket.emit = sinon.stub()
           @callback = sinon.spy()
 
         it 'should call device on itself with the uuid of the device we are getting the key for', ->
           @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-          expect(@sut.device).to.have.been.calledWith uuid: 'c9707ff2-b3e7-4363-b164-90f5753dac68'
+          expect(@sut.socket.emit).to.have.been.calledWith 'getPublicKey', 'c9707ff2-b3e7-4363-b164-90f5753dac68'
 
         describe 'when called with a different uuid', ->
           it 'should call device with the different uuid', ->
             @sut.getPublicKey '4df5ee81-8f60-437d-8c19-2375df745b70', @callback
-            expect(@sut.device).to.have.been.calledWith uuid: '4df5ee81-8f60-437d-8c19-2375df745b70'
+            expect(@sut.socket.emit).to.have.been.calledWith 'getPublicKey', '4df5ee81-8f60-437d-8c19-2375df745b70'
 
           describe 'when device returns an invalid device', ->
             beforeEach ->
-              @sut.device.yields new Error('you suck'), null
+              @sut.socket.emit.yields new Error('you suck'), null
 
             it 'should call the callback with an error', ->
               @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
@@ -140,8 +140,7 @@ describe 'Connection', ->
 
           describe 'when device returns a valid device without a public key', ->
             beforeEach ->
-              @device = {}
-              @sut.device.yields undefined, @device
+              @sut.socket.emit.yields null, null
 
             it 'should call the callback with an error', ->
               @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
@@ -150,11 +149,10 @@ describe 'Connection', ->
 
           describe 'when device returns a valid device with a public key', ->
             beforeEach ->
-              @device =
-                publicKey: '-----BEGIN PUBLIC KEY-----\nMFswDQYJKoZIhvcNAQEBBQADSgAwRwJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWA\nT0QRcsAHeDNy4HwNrME7xxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQAB\n-----END PUBLIC KEY-----'
+              @publicKey = '-----BEGIN PUBLIC KEY-----\nMFswDQYJKoZIhvcNAQEBBQADSgAwRwJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWA\nT0QRcsAHeDNy4HwNrME7xxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQAB\n-----END PUBLIC KEY-----'
 
               @privateKey = new NodeRSA '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
-              @sut.device.yields undefined, { device: @device }
+              @sut.socket.emit.yields null, @publicKey
 
             it 'should call the callback without an error', ->
               @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
