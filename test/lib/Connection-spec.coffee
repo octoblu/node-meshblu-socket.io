@@ -182,17 +182,18 @@ describe 'Connection', ->
       beforeEach ->
         @console = error: sinon.spy()
         @privateKey = '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
-        @NodeRSA = sinon.stub()
+
+        @NodeRSAFake = sinon.stub()
 
         @sut = new Connection( { privateKey: @privateKey }, {
           socketIoClient: -> new EventEmitter(),
-          NodeRSA : @NodeRSA,
+          NodeRSA : @NodeRSAFake,
           console: @console
         })
 
 
       it 'should call NodeRSA with the private key passed in', ->
-        expect(@NodeRSA).to.have.been.calledWith @privateKey
+        expect(@NodeRSAFake).to.have.been.calledWith @privateKey
       describe 'when we get a message with an "encryptedPayload" property', ->
         it 'should decrypt the encryptedPayload before emitting it to the user', ->
 
@@ -246,6 +247,7 @@ describe 'Connection', ->
 
           emitArgs = @sut._emitWithAck.args[0]
           expect(emitArgs[1]).to.deep.equal messageObject
+
 
 
 
