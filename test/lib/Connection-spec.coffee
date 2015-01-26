@@ -60,7 +60,6 @@ describe 'Connection', ->
         @sut.resetToken 'uuid4', @callback
         expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
 
-
     describe 'encryptMessage', ->
       it 'should exist', ->
         expect(@sut.encryptMessage).to.exist
@@ -177,6 +176,30 @@ describe 'Connection', ->
               it 'should be able to decrypt the result with the private key', ->
                 decryptedMessage = @privateKey.decrypt(@encryptedMessage).toString()
                 expect(decryptedMessage).to.equal 'hi'
+
+    describe 'generateKeyPair', ->
+      beforeEach ->
+        class FakeNodeRSA
+          generateKeyPair: sinon.spy()
+          exportKey: (arg) => {public: 'the-public', private: 'the-private'}[arg]
+
+        @nodeRSA = new FakeNodeRSA()
+
+        @sut = new Connection( {}, {
+          socketIoClient: -> new EventEmitter(),
+          console: @console
+          NodeRSA: => @nodeRSA
+        });
+        @result = @sut.generateKeyPair()
+
+      it 'should have called generateKeyPair on an instance of nodeRSA', ->
+        expect(@nodeRSA.generateKeyPair).to.have.been.called
+
+      it 'should generate a public key', ->
+        expect(@result.publicKey).to.equal 'the-public'
+
+      it 'should generate a private key', ->
+        expect(@result.privateKey).to.equal 'the-private'
 
     describe 'when we create a connection with a private key', ->
       beforeEach ->
