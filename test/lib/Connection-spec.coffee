@@ -182,21 +182,51 @@ describe 'Connection', ->
       beforeEach ->
         @console = error: sinon.spy()
         @privateKey = '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
-
-        @NodeRSAFake = sinon.stub()
-
         @sut = new Connection( { privateKey: @privateKey }, {
           socketIoClient: -> new EventEmitter(),
-          NodeRSA : @NodeRSAFake,
           console: @console
         })
 
 
-      it 'should call NodeRSA with the private key passed in', ->
-        expect(@NodeRSAFake).to.have.been.calledWith @privateKey
-      describe 'when we get a message with an "encryptedPayload" property', ->
-        it 'should decrypt the encryptedPayload before emitting it to the user', ->
+      it 'should create a private key property on itself', ->
+        expect(@sut.privateKey).to.exist;
 
+      it 'should have a private key property that is based on the key passed in', ->
+        expect(@sut.privateKey.exportKey('private')).to.equal @privateKey
+
+      describe 'when we get a message with an "encryptedPayload" property', ->
+        beforeEach ->
+          @sut.privateKey.decrypt = sinon.stub()
+
+        it 'should decrypt the encryptedPayload', ->
+          @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
+          expect(@sut.privateKey.decrypt).to.be.calledWith 'hello!'
+
+      describe 'when we get a message with a different value for "encryptedPayload"', ->
+        beforeEach ->
+          @sut.privateKey.decrypt = sinon.stub()
+
+        it 'should decrypt that encryptedPayload', ->
+          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
+          expect(@sut.privateKey.decrypt).to.be.calledWith 'world!'
+
+      describe 'when the privatekey decrypts the payload', ->
+        beforeEach ->
+          @sut.privateKey.decrypt = sinon.stub().returns 5
+          sinon.stub @sut, 'emit'
+
+        it 'should assign the decrypted payload to the message before emitting it', ->
+          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
+          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: 5, encryptedPayload: 'world!' )
+
+      describe 'when the privatekey decrypts a different encryptedPayload', ->
+        beforeEach ->
+          @sut.privateKey.decrypt = sinon.stub().returns 10
+          sinon.stub @sut, 'emit'
+
+        it 'should assign the decrypted payload to the message before emitting it', ->
+          @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
+          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: 10, encryptedPayload: 'hello!' )
 
     describe 'message', ->
       beforeEach ->
