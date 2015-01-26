@@ -177,29 +177,29 @@ describe 'Connection', ->
                 decryptedMessage = @privateKey.decrypt(@encryptedMessage).toString()
                 expect(decryptedMessage).to.equal 'hi'
 
-    describe 'generateKeyPair', ->
-      beforeEach ->
-        class FakeNodeRSA
-          generateKeyPair: sinon.spy()
-          exportKey: (arg) => {public: 'the-public', private: 'the-private'}[arg]
+      describe 'generateKeyPair', ->
+        beforeEach ->
+          class FakeNodeRSA
+            generateKeyPair: sinon.spy()
+            exportKey: (arg) => {public: 'the-public', private: 'the-private'}[arg]
 
-        @nodeRSA = new FakeNodeRSA()
+          @nodeRSA = new FakeNodeRSA()
 
-        @sut = new Connection( {}, {
-          socketIoClient: -> new EventEmitter(),
-          console: @console
-          NodeRSA: => @nodeRSA
-        });
-        @result = @sut.generateKeyPair()
+          @sut = new Connection( {}, {
+            socketIoClient: -> new EventEmitter(),
+            console: @console
+            NodeRSA: => @nodeRSA
+          });
+          @result = @sut.generateKeyPair()
 
-      it 'should have called generateKeyPair on an instance of nodeRSA', ->
-        expect(@nodeRSA.generateKeyPair).to.have.been.called
+        it 'should have called generateKeyPair on an instance of nodeRSA', ->
+          expect(@nodeRSA.generateKeyPair).to.have.been.called
 
-      it 'should generate a public key', ->
-        expect(@result.publicKey).to.equal 'the-public'
+        it 'should generate a public key', ->
+          expect(@result.publicKey).to.equal 'the-public'
 
-      it 'should generate a private key', ->
-        expect(@result.privateKey).to.equal 'the-private'
+        it 'should generate a private key', ->
+          expect(@result.privateKey).to.equal 'the-private'
 
     describe 'when we create a connection with a private key', ->
       beforeEach ->
@@ -219,7 +219,7 @@ describe 'Connection', ->
 
       describe 'when we get a message with an "encryptedPayload" property', ->
         beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub()
+          @sut.privateKey.decrypt = sinon.stub().returns null
 
         it 'should decrypt the encryptedPayload', ->
           @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
@@ -227,7 +227,7 @@ describe 'Connection', ->
 
       describe 'when we get a message with a different value for "encryptedPayload"', ->
         beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub()
+          @sut.privateKey.decrypt = sinon.stub().returns null
 
         it 'should decrypt that encryptedPayload', ->
           @sut._handleAckRequest 'message', encryptedPayload: 'world!'
@@ -250,6 +250,15 @@ describe 'Connection', ->
         it 'should assign the decrypted payload to the message before emitting it', ->
           @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
           expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: 10, encryptedPayload: 'hello!' )
+
+      describe 'when the encrypted payload is a json object', ->
+        beforeEach ->
+          @sut.privateKey.decrypt = sinon.stub().returns '{"foo": "bar"}'
+          sinon.stub @sut, 'emit'
+
+        it 'should parse the json', ->
+          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
+          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: {"foo": "bar"}, encryptedPayload: 'world!' )
 
     describe 'message', ->
       beforeEach ->
