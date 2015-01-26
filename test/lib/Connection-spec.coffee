@@ -1,5 +1,6 @@
 {EventEmitter} = require 'events'
 Connection     = require '../../lib/Connection'
+NodeRSA = require 'node-rsa'
 
 describe 'Connection', ->
   describe 'when we pass in a fake socket.io', ->
@@ -78,21 +79,21 @@ describe 'Connection', ->
 
         describe 'when getPublicKey returns with a public key', ->
           beforeEach ->
-            @publicKey = encrypt: sinon.stub()
+            @publicKey = encrypt: sinon.stub().returns '54321'
             @sut.getPublicKey.yields null, @publicKey
 
           it 'should call encrypt on the response from getPublicKey', ->
-            @sut.encryptMessage devices: 1, payload : { hello : 'world' }
+            @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
             expect(@publicKey.encrypt).to.have.been.calledWith JSON.stringify(hello : 'world')
 
-          describe 'when publicKey.encrypt returns with "12345"', ->
+          describe 'when publicKey.encrypt returns with a buffer of "12345"', ->
             beforeEach ->
-              @sut.message = sinon.spy(@sut.message)
-              @publicKey.encrypt.returns '12345'
+              @sut.message = sinon.spy @sut.message
+              @publicKey.encrypt.returns new Buffer '12345',
 
             it 'should call message with an encrypted payload', ->
-              @sut.encryptMessage devices: 1, payload : { hello : 'world' }
-              expect(@sut.message).to.have.been.calledWith devices: 1, encryptedPayload: '12345'
+              @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
+              expect(@sut.message).to.have.been.calledWith devices: 1, encryptedPayload: 'MTIzNDU='
 
 
         describe 'when getPublicKey returns with an error', ->
@@ -100,7 +101,7 @@ describe 'Connection', ->
             @sut.getPublicKey.yields true, null
 
           it 'should call console.error and report the error', ->
-            @sut.encryptMessage devices: 1, payload : { hello : 'world' }
+            @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
             expect(@console.error).to.have.been.calledWith 'can\'t find public key for device'
 
 
@@ -108,5 +109,77 @@ describe 'Connection', ->
         it 'should call getPublicKey with the uuid of the target device', ->
           @sut.encryptMessage devices: 2
           expect(@sut.getPublicKey).to.have.been.calledWith 2
+
+    describe 'getPublicKey', ->
+      it 'should exist', ->
+        expect(@sut.getPublicKey).to.exist
+
+      describe 'when called', ->
+        beforeEach () ->
+          @sut.device = sinon.stub()
+          @callback = sinon.spy()
+
+        it 'should call device on itself with the uuid of the device we are getting the key for', ->
+          @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+          expect(@sut.device).to.have.been.calledWith uuid: 'c9707ff2-b3e7-4363-b164-90f5753dac68'
+
+        describe 'when called with a different uuid', ->
+          it 'should call device with the different uuid', ->
+            @sut.getPublicKey '4df5ee81-8f60-437d-8c19-2375df745b70', @callback
+            expect(@sut.device).to.have.been.calledWith uuid: '4df5ee81-8f60-437d-8c19-2375df745b70'
+
+          describe 'when device returns an invalid device', ->
+            beforeEach ->
+              @sut.device.yields new Error('you suck'), null
+
+            it 'should call the callback with an error', ->
+              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+              error = @callback.args[0][0]
+              expect(error).to.exist
+
+          describe 'when device returns a valid device without a public key', ->
+            beforeEach ->
+              @device = {}
+              @sut.device.yields undefined, @device
+
+            it 'should call the callback with an error', ->
+              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+              error = @callback.args[0][0]
+              expect(error).to.exist
+
+          describe 'when device returns a valid device with a public key', ->
+            beforeEach ->
+              @device =
+                publicKey: '-----BEGIN PUBLIC KEY-----\nMFswDQYJKoZIhvcNAQEBBQADSgAwRwJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWA\nT0QRcsAHeDNy4HwNrME7xxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQAB\n-----END PUBLIC KEY-----'
+
+              @privateKey = new NodeRSA '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
+              @sut.device.yields undefined, { device: @device }
+
+            it 'should call the callback without an error', ->
+              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+              error = @callback.args[0][0]
+              expect(error).to.not.exist
+
+            it 'should only call the callback once', ->
+              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+              expect(@callback.calledOnce).to.be.true
+
+            it 'should return an object with a method encrypt', ->
+              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+              key = @callback.args[0][1]
+              expect(key.encrypt).to.exist
+
+            describe 'when encrypt is called with a message on the returned key', ->
+              beforeEach ->
+                @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
+                key = @callback.args[0][1]
+                @encryptedMessage = key.encrypt('hi').toString 'base64'
+
+              it 'should be able to decrypt the result with the private key', ->
+                decryptedMessage = @privateKey.decrypt(@encryptedMessage).toString()
+                expect(decryptedMessage).to.equal 'hi'
+
+
+
 
 
