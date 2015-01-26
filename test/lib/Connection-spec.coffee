@@ -70,11 +70,11 @@ describe 'Connection', ->
 
       describe 'when encryptMessage is called with a device of uuid 1', ->
         it 'should call getPublicKey', ->
-          @sut.encryptMessage devices: 1
+          @sut.encryptMessage 1
           expect(@sut.getPublicKey).to.have.been.called
 
         it 'should call getPublicKey with the uuid of the target device 1', ->
-          @sut.encryptMessage devices: 1
+          @sut.encryptMessage 1
           expect(@sut.getPublicKey).to.have.been.calledWith 1
 
         describe 'when getPublicKey returns with a public key', ->
@@ -83,7 +83,7 @@ describe 'Connection', ->
             @sut.getPublicKey.yields null, @publicKey
 
           it 'should call encrypt on the response from getPublicKey', ->
-            @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
+            @sut.encryptMessage 1, hello : 'world'
             expect(@publicKey.encrypt).to.have.been.calledWith JSON.stringify(hello : 'world')
 
           describe 'when publicKey.encrypt returns with a buffer of "12345"', ->
@@ -92,8 +92,9 @@ describe 'Connection', ->
               @publicKey.encrypt.returns new Buffer '12345',
 
             it 'should call message with an encrypted payload', ->
-              @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
-              expect(@sut.message).to.have.been.calledWith devices: 1, encryptedPayload: 'MTIzNDU='
+              @sut.encryptMessage 1, hello : 'world'
+              expect(@sut.message).to.have.been.calledWith 1, undefined, encryptedPayload: 'MTIzNDU='
+
 
 
         describe 'when getPublicKey returns with an error', ->
@@ -101,13 +102,13 @@ describe 'Connection', ->
             @sut.getPublicKey.yields true, null
 
           it 'should call console.error and report the error', ->
-            @sut.encryptMessage devices: 1, encryptedPayload : { hello : 'world' }
+            @sut.encryptMessage 1, { hello : 'world' }
             expect(@console.error).to.have.been.calledWith 'can\'t find public key for device'
 
 
       describe 'when encryptMessage is called with a different uuid', ->
         it 'should call getPublicKey with the uuid of the target device', ->
-          @sut.encryptMessage devices: 2
+          @sut.encryptMessage 2
           expect(@sut.getPublicKey).to.have.been.calledWith 2
 
     describe 'getPublicKey', ->
@@ -179,6 +180,55 @@ describe 'Connection', ->
                 decryptedMessage = @privateKey.decrypt(@encryptedMessage).toString()
                 expect(decryptedMessage).to.equal 'hi'
 
+    describe 'message', ->
+      beforeEach ->
+        @sut._emitWithAck = sinon.stub()
+
+      describe 'when message is called with a uuid and a message body', ->
+        it 'should call emitWithAck with an object with a devices and payload property', ->
+          @object = {}
+          @sut.message 1, @object
+          messageObject = @sut._emitWithAck.args[0][1]
+          expect(messageObject).to.deep.equal {devices: 1, payload: @object}
+
+      describe 'when message is called with a different uuid and message body', ->
+        it 'should call emitWithAck with an object with that uuid and payload', ->
+          @object = hello: 'world'
+          @sut.message 2, @object
+          messageObject = @sut._emitWithAck.args[0][1]
+          expect(messageObject).to.deep.equal {devices: 2, payload: @object}
+
+      describe 'when message is called with a callback', ->
+         it 'should call emitWithAck with a callback', ->
+          @callback = sinon.spy()
+          @object = {}
+          @sut.message 1, @object, @callback
+          passedCallback = @sut._emitWithAck.args[0][2]
+          expect(passedCallback).to.equal @callback
+
+      describe 'when message is called the old way, with one big object', ->
+        it 'should call _emitWithAck with the entire object and a callback', ->
+          callback = sinon.spy()
+          message = devices: [ 1 ], payload: { hello: 'world' }
+          @sut.message message, callback
+
+          expect(@sut._emitWithAck).to.have.been.calledWith 'message', message, callback
+
+      describe 'when message is called with options', ->
+        it 'should call _emitWithAck with an object with the options in it', ->
+          callback = sinon.spy()
+          message = cats: true
+          options = hello: 'world'
+          messageObject = {
+            devices: [1],
+            payload:
+              cats: true,
+            hello: 'world'
+          }
+          @sut.message [1], message, options, callback
+
+          emitArgs = @sut._emitWithAck.args[0]
+          expect(emitArgs[1]).to.deep.equal messageObject
 
 
 
