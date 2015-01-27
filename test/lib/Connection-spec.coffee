@@ -61,9 +61,6 @@ describe 'Connection', ->
         expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
 
     describe 'encryptMessage', ->
-      it 'should exist', ->
-        expect(@sut.encryptMessage).to.exist
-
       beforeEach ->
         @sut.getPublicKey = sinon.stub()
 
@@ -79,7 +76,7 @@ describe 'Connection', ->
         describe 'when getPublicKey returns with a public key', ->
           beforeEach ->
             @sut.message = sinon.stub()
-            @publicKey = encrypt: sinon.stub().returns '54321'
+            @publicKey = {encrypt: sinon.stub().returns('54321')}
             @sut.getPublicKey.yields null, @publicKey
 
           it 'should call encrypt on the response from getPublicKey', ->
@@ -92,9 +89,7 @@ describe 'Connection', ->
 
             it 'should call message with an encrypted payload', ->
               @sut.encryptMessage 1, hello : 'world'
-              expect(@sut.message).to.have.been.calledWith 1, undefined, encryptedPayload: 'MTIzNDU='
-
-
+              expect(@sut.message).to.have.been.calledWith 1, null, encryptedPayload: 'MTIzNDU='
 
         describe 'when getPublicKey returns with an error', ->
           beforeEach ->
@@ -104,11 +99,25 @@ describe 'Connection', ->
             @sut.encryptMessage 1, { hello : 'world' }
             expect(@console.error).to.have.been.calledWith 'can\'t find public key for device'
 
-
       describe 'when encryptMessage is called with a different uuid', ->
         it 'should call getPublicKey with the uuid of the target device', ->
           @sut.encryptMessage 2
           expect(@sut.getPublicKey).to.have.been.calledWith 2
+
+      describe 'when encryptMessage is called with options', ->
+        beforeEach ->
+          @uuid = '54063a2f-fcfb-4f97-8438-f8b0b0c635ad'
+          @callback = =>
+          @options = payload: 'plain-text'
+
+          @publicKey = {encrypt: sinon.stub().returns('54321')}
+          @sut.getPublicKey.yields null, @publicKey
+          @sut.message = sinon.stub()
+          @sut.encryptMessage @uuid, 'encrypt-this', @options, @callback
+
+        it 'should call message with the options ', ->
+          expect(@sut.message).to.have.been.calledWith @uuid, null, {payload: 'plain-text', encryptedPayload: '54321'}, @callback
+
 
     describe 'getPublicKey', ->
       it 'should exist', ->
