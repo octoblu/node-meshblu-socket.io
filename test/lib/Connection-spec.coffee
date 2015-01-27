@@ -298,7 +298,7 @@ describe 'Connection', ->
       describe 'when message is called the old way, with one big object', ->
         it 'should call _emitWithAck with the entire object and a callback', ->
           callback = sinon.spy()
-          message = devices: [ 1 ], payload: { hello: 'world' }
+          message = {devices: [ 1 ], payload: { hello: 'world' }}
           @sut.message message, callback
 
           expect(@sut._emitWithAck).to.have.been.calledWith 'message', message, callback
