@@ -1,7 +1,7 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "homepage": "http://developer.octoblu.com",
   "repository": "git://github.com/octoblu/npm",
   "author": "Octoblu",
@@ -19,8 +19,9 @@
   ],
   "dependencies": {
     "debug": "^2.1.1",
+    "json-stable-stringify": "^1.0.0",
     "lodash": "^2.4.1",
-    "node-rsa": "^0.2.13",
+    "node-rsa": "=0.2.13",
     "socket.io-client": "^1.2.1"
   },
   "engines": {

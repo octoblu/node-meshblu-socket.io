@@ -118,6 +118,66 @@ describe 'Connection', ->
         it 'should call message with the options ', ->
           expect(@sut.message).to.have.been.calledWith @uuid, null, {payload: 'plain-text', encryptedPayload: '54321'}, @callback
 
+    describe 'sign', ->
+      beforeEach ->
+        @sut.privateKey =  sign: sinon.stub()
+        @sut.privateKey.sign.returns new Buffer( 'cafe', 'base64')
+
+      it 'should exist', ->
+        expect(@sut.sign).to.exist
+
+      describe 'when it is called with a string', ->
+        it 'should call NodeRSA#sign', ->
+          @sut.sign 'doesntmatter'
+          expect(@sut.privateKey.sign).to.have.been.calledWith '"doesntmatter"'
+
+      describe 'when it is called with a different string', ->
+        it 'should call NodeRSA#sign', ->
+          @sut.sign 'matters,doesnt'
+          expect(@sut.privateKey.sign).to.have.been.calledWith '"matters,doesnt"'
+
+      describe 'when it is called with an object', ->
+        it 'should call privateKey.sign with a string version of that data', ->
+          @objToSign = hair: 'blue', eyes: 'brown'
+          @sut.sign @objToSign
+          expect(@sut.privateKey.sign).to.have.been.calledWith '{"eyes":"brown","hair":"blue"}'
+
+      describe 'when privateKey.sign returns a buffer', ->
+        it 'should return the base64-encoded version of that buffer', ->
+          @sut.privateKey.sign.returns new Buffer( 'deadbeef', 'base64')
+          expect( @sut.sign 'whatever' ).to.equal 'deadbeef'
+
+      describe 'when privateKey.sign returns a different buffer', ->
+        it 'should return the base64-encoded version of that buffer', ->
+          @sut.privateKey.sign.returns new Buffer( 'decafec0ffee', 'base64')
+          expect( @sut.sign 'whatever' ).to.equal 'decafec0ffee'
+
+    describe 'verify', ->
+      beforeEach ->
+        @sut.privateKey =  verify: sinon.stub()
+      it 'should exist', ->
+        expect(@sut.verify).to.exist
+
+      describe 'when it is called with data and a signature', ->
+        it 'should call NodeRSA#verify', ->
+          @sut.verify 'somedata', 'af0d1'
+          expect(@sut.privateKey.verify).to.have.been.calledWith '"somedata"' ,'af0d1', 'utf8', 'base64'
+
+      describe 'when it is called with data and a signature', ->
+        it 'should call NodeRSA#verify', ->
+          @sut.verify 'moardata', 'b0fd3'
+          expect(@sut.privateKey.verify).to.have.been.calledWith '"moardata"' ,'b0fd3', 'utf8', 'base64'
+
+      describe 'when publicKey.verify returns true', ->
+        it 'should return true', ->
+          @sut.privateKey.verify.returns true
+          expect(@sut.verify()).to.be.true
+
+      describe 'when publicKey.verify returns false', ->
+        it 'should return false', ->
+          @sut.privateKey.verify.returns false
+          expect(@sut.verify()).to.be.false
+
 
     describe 'getPublicKey', ->
       it 'should exist', ->
