@@ -31,6 +31,54 @@ describe 'Connection', ->
     it 'should have a function called "resetToken"', ->
       expect(@sut.resetToken).to.exist
 
+    describe '-> parseUrl', ->
+      beforeEach ->
+        @sut = new Connection( {}, {
+          socketIoClient: -> new EventEmitter(),
+          console: @console
+          })
+
+      describe 'when nil', ->
+        it 'should return nothing', ->
+          console.log(@sut.parseUrl)
+          expect(@sut.parseUrl()).to.be.null
+
+      describe 'when given an empty string', ->
+        it 'should return nothing', ->
+          expect(@sut.parseUrl('')).to.be.null
+
+      describe 'when given a web socket URL', ->
+        it 'should return a url', ->
+          expect(@sut.parseUrl('ws://something.co')).to.equal('ws://something.co')
+
+      describe 'when given an http URL', ->
+        it 'should return a websocket url', ->
+          expect(@sut.parseUrl('http://something.co')).to.equal('ws://something.co/')
+
+      describe 'when given a wss URL', ->
+        it 'should return a wss url', ->
+          expect(@sut.parseUrl('wss://something.co')).to.equal('wss://something.co')
+
+      describe 'when given an https URL', ->
+        it 'should return a secure websocket url', ->
+          expect(@sut.parseUrl('https://something.co')).to.equal('wss://something.co/')
+
+      describe 'when given a url with a hostname and no protocol', ->
+        it 'should return a websocket url', ->
+          expect(@sut.parseUrl('something.co')).to.equal('ws://something.co')
+          
+      describe 'when given a url with a hostname and a port', ->
+        it 'should return a secure websocket url', ->
+          expect(@sut.parseUrl('something.co', 443)).to.equal('wss://something.co:443')
+
+      describe 'when given a url with a hostname and a custom port', ->
+        it 'should return a websocket url with the port', ->
+          expect(@sut.parseUrl('http://something.co', 333)).to.equal('ws://something.co:333/')
+          
+      describe 'when given a url with a url with port, and a custom port', ->
+        it 'should return a websocket url with the port', ->
+          expect(@sut.parseUrl('http://something.co:443', 555)).to.equal('ws://something.co:555/')
+
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
         @sut.socket.emit = sinon.spy @sut.socket.emit
