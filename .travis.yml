@@ -1,38 +1,39 @@
 sudo: false
 language: node_js
 node_js:
-  - '0.10'
+- '0.10'
 notifications:
-  flowdock: e7454f5285e7b9ab67009802d5560490
+  slack:
+    secure: T68jtProPTuiVDmw2+MZ7K/JHGzCxlHIZqaTGDk1q62NjyPAY4lVt9IGFyWRNi1+vb/nTlccSng3OHvaZvHuVW2CNQqsol/u3PwrV1J4qRS619mlnmuTav4SeyrVKvznfWzePZNLs0TM5cvcnrfeExGIloztWa+r7mMbqi+i+0c=
 deploy:
-  - provider: s3
-    access_key_id: AKIAIT4X4NDGM2WVL6VA
-    secret_access_key:
-      secure: HRl5NXs+NxzABdt/uaBfoiPeJsIJUEePPq8fq/R0gEdyFUH01WSf7MA6yrMqelNvnWuE539leLKcfR5JcqyDdyRObc4gKg9mHDU6TGVKguO/bQrtdoRwPy1lXWTR1ndX7VlGuTPiISMXAHaTbYbGBO3srEwwptpud8CH3468cYg=
-    bucket: meshblu-client
-    region: us-west-2
-    skip_cleanup: true
-    local-dir: deploy
-    upload-dir: js
-    on:
-      tags: true
-      all_branches: true
-  - provider: npm
-    skip_cleanup: true
-    clean_up: false
-    email: jade.meskill@gmail.com
-    api_key:
-      secure: ObH1CPOBhpHoOHMfoaeTuyniAxulUH6g4MixDJIbrVApQ1aCCdetBwsj76GBj9zZH4pVjOPlppzYLzJy0Md1GAuSV8OzChhC3EkVcv4xbDbieYRa71OmsSnoSQzdt6y99Pf6jekrjXvhrpPtLof5zi4IsWvOQ/Q2Jr6QlnVCnTc=
-    on:
-      tags: true
-      all_branches: true
+- provider: s3
+  access_key_id: AKIAIT4X4NDGM2WVL6VA
+  secret_access_key:
+    secure: HRl5NXs+NxzABdt/uaBfoiPeJsIJUEePPq8fq/R0gEdyFUH01WSf7MA6yrMqelNvnWuE539leLKcfR5JcqyDdyRObc4gKg9mHDU6TGVKguO/bQrtdoRwPy1lXWTR1ndX7VlGuTPiISMXAHaTbYbGBO3srEwwptpud8CH3468cYg=
+  bucket: meshblu-client
+  region: us-west-2
+  skip_cleanup: true
+  local-dir: deploy
+  upload-dir: js
+  on:
+    tags: true
+    all_branches: true
+- provider: npm
+  skip_cleanup: true
+  clean_up: false
+  email: jade.meskill@gmail.com
+  api_key:
+    secure: ObH1CPOBhpHoOHMfoaeTuyniAxulUH6g4MixDJIbrVApQ1aCCdetBwsj76GBj9zZH4pVjOPlppzYLzJy0Md1GAuSV8OzChhC3EkVcv4xbDbieYRa71OmsSnoSQzdt6y99Pf6jekrjXvhrpPtLof5zi4IsWvOQ/Q2Jr6QlnVCnTc=
+  on:
+    tags: true
+    all_branches: true
 before_deploy:
-  - npm install ws browserify
-  - mkdir -p deploy/$TRAVIS_TAG deploy/latest
-  - node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
-  - cp deploy/$TRAVIS_TAG/meshblu.bundle.js deploy/latest/meshblu.bundle.js
+- npm install ws browserify
+- mkdir -p deploy/$TRAVIS_TAG deploy/latest
+- node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
+- cp deploy/$TRAVIS_TAG/meshblu.bundle.js deploy/latest/meshblu.bundle.js
 addons:
   code_climate:
     repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
 after_script:
-  - cat coverage/lcov.info | codeclimate
+- cat coverage/lcov.info | codeclimate
