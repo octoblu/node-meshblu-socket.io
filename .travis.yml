@@ -28,8 +28,9 @@ deploy:
       all_branches: true
 before_deploy:
   - npm install ws browserify
-  - mkdir -p deploy/$TRAVIS_TAG
+  - mkdir -p deploy/$TRAVIS_TAG deploy/latest
   - node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
+  - cp deploy/$TRAVIS_TAG/meshblu.bundle.js deploy/latest/meshblu.bundle.js
 addons:
   code_climate:
     repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
