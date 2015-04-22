@@ -13,6 +13,7 @@ deploy:
   bucket: meshblu-client
   region: us-west-2
   skip_cleanup: true
+  detect_encoding: true
   local-dir: deploy
   upload-dir: js
   on:
@@ -31,6 +32,8 @@ before_deploy:
 - npm install ws browserify
 - mkdir -p deploy/$TRAVIS_TAG deploy/latest
 - node_modules/.bin/browserify -s meshblu index.js > deploy/$TRAVIS_TAG/meshblu.bundle.js
+- gzip deploy/$TRAVIS_TAG/meshblu.bundle.js 
+- mv deploy/$TRAVIS_TAG/meshblu.bundle.js.gz deploy/$TRAVIS_TAG/meshblu.bundle.js
 - cp deploy/$TRAVIS_TAG/meshblu.bundle.js deploy/latest/meshblu.bundle.js
 addons:
   code_climate:
