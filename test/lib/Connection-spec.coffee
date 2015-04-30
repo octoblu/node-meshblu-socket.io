@@ -79,9 +79,13 @@ describe 'Connection', ->
         it 'should return a websocket url with the port', ->
           expect(@sut.parseUrl('http://something.co:443', 555)).to.equal('ws://something.co:555/')
 
-      describe 'when given a url with a url with port, and a custom port', ->
+      describe 'when given a url with a url with port, and a ssl port as a string', ->
         it 'should return a websocket url with the port', ->
-          expect(@sut.parseUrl('ws://something.co', 443)).to.equal('wss://something.co:443')
+          expect(@sut.parseUrl('ws://something.co', '443')).to.equal('wss://something.co:443')
+
+      describe 'when given a url with a url with port, and an invalid port as a string', ->
+        it 'should return a websocket url with the port', ->
+          expect(@sut.parseUrl('ws://something.co', 'jjk')).to.equal('ws://something.co')
 
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
