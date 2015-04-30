@@ -66,7 +66,7 @@ describe 'Connection', ->
       describe 'when given a url with a hostname and no protocol', ->
         it 'should return a websocket url', ->
           expect(@sut.parseUrl('something.co')).to.equal('ws://something.co')
-          
+
       describe 'when given a url with a hostname and a port', ->
         it 'should return a secure websocket url', ->
           expect(@sut.parseUrl('something.co', 443)).to.equal('wss://something.co:443')
@@ -74,10 +74,14 @@ describe 'Connection', ->
       describe 'when given a url with a hostname and a custom port', ->
         it 'should return a websocket url with the port', ->
           expect(@sut.parseUrl('http://something.co', 333)).to.equal('ws://something.co:333/')
-          
+
       describe 'when given a url with a url with port, and a custom port', ->
         it 'should return a websocket url with the port', ->
           expect(@sut.parseUrl('http://something.co:443', 555)).to.equal('ws://something.co:555/')
+
+      describe 'when given a url with a url with port, and a custom port', ->
+        it 'should return a websocket url with the port', ->
+          expect(@sut.parseUrl('ws://something.co', 443)).to.equal('wss://something.co:443')
 
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
@@ -426,9 +430,3 @@ describe 'Connection', ->
 
           emitArgs = @sut._emitWithAck.args[0]
           expect(emitArgs[1]).to.deep.equal messageObject
-
-
-
-
-
-
