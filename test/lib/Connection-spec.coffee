@@ -31,6 +31,43 @@ describe 'Connection', ->
     it 'should have a function called "resetToken"', ->
       expect(@sut.resetToken).to.exist
 
+    describe 'when connect, then ready', ->
+      beforeEach ->
+        @socket = @sut.socket
+        @socket.emit 'connect'
+        @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+
+      describe 'when subscribe and the socket reconnects', ->
+        beforeEach ->
+          @sut.subscribe uuid: 'this'
+          sinon.spy @sut.socket, 'emit'
+          @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+
+        it 'should re subscribe to the "this"', ->
+          expect(@socket.emit).to.have.been.calledWith 'subscribe', uuid: 'this'
+
+      describe 'when subscribed to foo and the socket reconnects', ->
+        beforeEach ->
+          @sut.subscribe uuid: 'foo'
+          sinon.spy @sut.socket, 'emit'
+          @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+
+        it 'should re subscribe to the "this"', ->
+          expect(@socket.emit).to.have.been.calledWith 'subscribe', uuid: 'foo'
+
+      describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
+        beforeEach ->
+          @sut.subscribe uuid: 'foo'
+          @sut.unsubscribe uuid: 'foo'
+          sinon.spy @sut.socket, 'emit'
+          @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+
+        it 'should re subscribe to the "this"', ->
+          expect(@socket.emit).not.to.have.been.calledWith 'subscribe', uuid: 'foo'
+
+    it 'should have a function called "resetToken"', ->
+      expect(@sut.resetToken).to.exist
+
     describe '-> parseUrl', ->
       beforeEach ->
         @sut = new Connection( {}, {
