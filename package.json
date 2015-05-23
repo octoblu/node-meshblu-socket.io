@@ -3,7 +3,7 @@
   "description": "Meshblu IoT network and API",
   "version": "1.22.0",
   "homepage": "http://developer.octoblu.com",
-  "repository": "git://github.com/octoblu/npm",
+  "repository": "git://github.com/octoblu/meshblu-npm",
   "author": "Octoblu",
   "main": "./index.js",
   "scripts": {
@@ -28,12 +28,7 @@
   "engines": {
     "node": ">= 0.6.0"
   },
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "http://github.com/octoblu/npm/raw/master/LICENSE"
-    }
-  ],
+  "license": "MIT",
   "devDependencies": {
     "chai": "^1.10.0",
     "codeclimate-test-reporter": "0.0.4",
