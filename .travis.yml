@@ -10,7 +10,7 @@ deploy:
   access_key_id: AKIAIT4X4NDGM2WVL6VA
   secret_access_key:
     secure: HRl5NXs+NxzABdt/uaBfoiPeJsIJUEePPq8fq/R0gEdyFUH01WSf7MA6yrMqelNvnWuE539leLKcfR5JcqyDdyRObc4gKg9mHDU6TGVKguO/bQrtdoRwPy1lXWTR1ndX7VlGuTPiISMXAHaTbYbGBO3srEwwptpud8CH3468cYg=
-  bucket: meshblu-client
+  bucket: octoblu-cdn
   region: us-west-2
   skip_cleanup: true
   detect_encoding: true
