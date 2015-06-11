@@ -7,9 +7,9 @@ notifications:
     secure: T68jtProPTuiVDmw2+MZ7K/JHGzCxlHIZqaTGDk1q62NjyPAY4lVt9IGFyWRNi1+vb/nTlccSng3OHvaZvHuVW2CNQqsol/u3PwrV1J4qRS619mlnmuTav4SeyrVKvznfWzePZNLs0TM5cvcnrfeExGIloztWa+r7mMbqi+i+0c=
 deploy:
 - provider: s3
-  access_key_id: AKIAIT4X4NDGM2WVL6VA
+  access_key_id: AKIAJH2D5IPIRHYJT5IA
   secret_access_key:
-    secure: HRl5NXs+NxzABdt/uaBfoiPeJsIJUEePPq8fq/R0gEdyFUH01WSf7MA6yrMqelNvnWuE539leLKcfR5JcqyDdyRObc4gKg9mHDU6TGVKguO/bQrtdoRwPy1lXWTR1ndX7VlGuTPiISMXAHaTbYbGBO3srEwwptpud8CH3468cYg=
+    secure: anJi4G4WilNsxBpvskDGimG8BXmBepTJwqEinPiPJ1tyDHQW4njWwnKNzJppXORRwOSPWwHNoJRM0Egr6w1XEPaPM5buXmLn2h6xlzO17Esx5VbP7ioakqzzZtbz2HDM0MO/EtBFsu2zvAjXJvX8gHz2j0srgjvKvGOwq9ngB5s=
   bucket: octoblu-cdn
   region: us-west-2
   skip_cleanup: true
@@ -32,7 +32,7 @@ before_deploy:
 - npm install ws browserify
 - mkdir -p deploy/meshblu/$TRAVIS_TAG deploy/meshblu/latest
 - node_modules/.bin/browserify -s meshblu index.js > deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
-- gzip deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js 
+- gzip deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
 - mv deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js.gz deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
 - cp deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js deploy/meshblu/latest/meshblu.bundle.js
 addons:
