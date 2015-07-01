@@ -15,7 +15,7 @@ try {
 var BASE_PATH = 'http://cdn.octoblu.com';
 
 var getUrl = function(packageJSON){
-  var filename = [packageJSON.name, packageJSON.version, os.platform(), os.arch(), 'node-modules'].join('-') + '.tar.gz';
+  var filename = [packageJSON.name, packageJSON.version, process.version, os.platform(), os.arch(), 'node-modules'].join('-') + '.tar.gz';
   var path = 'npm/' + packageJSON.name + '/' + packageJSON.version + '/' + filename;
   return BASE_PATH + '/' + path;
 };
