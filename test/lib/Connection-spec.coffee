@@ -39,21 +39,23 @@ describe 'Connection', ->
 
       describe 'when subscribe and the socket reconnects', ->
         beforeEach ->
+          @sut.bufferedSocketEmit = sinon.spy()
           @sut.subscribe uuid: 'this'
           sinon.spy @sut.socket, 'emit'
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
         it 'should re subscribe to the "this"', ->
-          expect(@socket.emit).to.have.been.calledWith 'subscribe', uuid: 'this'
+          expect(@sut.bufferedSocketEmit).to.have.been.calledWith 'subscribe', uuid: 'this'
 
       describe 'when subscribed to foo and the socket reconnects', ->
         beforeEach ->
+          @sut.bufferedSocketEmit = sinon.spy()
           @sut.subscribe uuid: 'foo'
           sinon.spy @sut.socket, 'emit'
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
         it 'should re subscribe to the "this"', ->
-          expect(@socket.emit).to.have.been.calledWith 'subscribe', uuid: 'foo'
+          expect(@sut.bufferedSocketEmit).to.have.been.calledWith 'subscribe', uuid: 'foo'
 
       describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
         beforeEach ->
