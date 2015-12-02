@@ -2,9 +2,13 @@ sudo: false
 language: node_js
 node_js:
 - '5'
-notifications:
-  slack:
-    secure: T68jtProPTuiVDmw2+MZ7K/JHGzCxlHIZqaTGDk1q62NjyPAY4lVt9IGFyWRNi1+vb/nTlccSng3OHvaZvHuVW2CNQqsol/u3PwrV1J4qRS619mlnmuTav4SeyrVKvznfWzePZNLs0TM5cvcnrfeExGIloztWa+r7mMbqi+i+0c=
+addons:
+  code_climate:
+    repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
+before_script:
+- npm install -g codeclimate-test-reporter
+after_script:
+- codeclimate-test-reporter < coverage/lcov.info
 deploy:
 - provider: s3
   access_key_id: AKIAJH2D5IPIRHYJT5IA
@@ -22,9 +26,9 @@ deploy:
 - provider: npm
   skip_cleanup: true
   clean_up: false
-  email: jade.meskill@gmail.com
+  email: serveradmin@octoblu.com
   api_key:
-    secure: ObH1CPOBhpHoOHMfoaeTuyniAxulUH6g4MixDJIbrVApQ1aCCdetBwsj76GBj9zZH4pVjOPlppzYLzJy0Md1GAuSV8OzChhC3EkVcv4xbDbieYRa71OmsSnoSQzdt6y99Pf6jekrjXvhrpPtLof5zi4IsWvOQ/Q2Jr6QlnVCnTc=
+    secure: XKhb05XLOyHiqDH7zoSEsTb1GV5bujyuGa13/B+tn4SxGSy91l+vsE05gRyigorCmvwcdQGHSihknYE8Wjnc31FKoyWqPIzsQ7Ysyw5vzjAcu4kMHd3CxmmND+2n8fllavRxC3nEJZM3A87vkAllmc49tEV6aP3aEC9H48AffX4=
   on:
     tags: true
     all_branches: true
@@ -35,8 +39,3 @@ before_deploy:
 - gzip deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
 - mv deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js.gz deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
 - cp deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js deploy/meshblu/latest/meshblu.bundle.js
-addons:
-  code_climate:
-    repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
-after_script:
-- cat coverage/lcov.info | codeclimate
