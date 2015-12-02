@@ -1,7 +1,7 @@
 sudo: false
 language: node_js
 node_js:
-- '0.10'
+- '5'
 notifications:
   slack:
     secure: T68jtProPTuiVDmw2+MZ7K/JHGzCxlHIZqaTGDk1q62NjyPAY4lVt9IGFyWRNi1+vb/nTlccSng3OHvaZvHuVW2CNQqsol/u3PwrV1J4qRS619mlnmuTav4SeyrVKvznfWzePZNLs0TM5cvcnrfeExGIloztWa+r7mMbqi+i+0c=
