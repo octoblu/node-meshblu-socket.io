@@ -1,7 +1,7 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "1.31.3",
+  "version": "1.31.4",
   "license": "MIT",
   "homepage": "https://developer.octoblu.com",
   "repository": "git://github.com/octoblu/meshblu-npm",
