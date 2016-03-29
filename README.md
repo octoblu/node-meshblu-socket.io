@@ -31,7 +31,7 @@ var conn = skynet.createConnection({
   "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
   "protocol": "mqtt", // or "websocket"
   "qos": 0, // MQTT Quality of Service (0=no confirmation, 1=confirmation, 2=N/A)
-  "server": "localhost", // optional - defaults to ws://meshblu.octoblu.com
+  "server": "localhost", // optional - defaults to ws://meshblu-socket-io.octoblu.com
   "port": 3000  // optional - defaults to 80
 });
 
