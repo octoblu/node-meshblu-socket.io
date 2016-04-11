@@ -4,46 +4,88 @@
 [![Code Climate](https://codeclimate.com/github/octoblu/meshblu-npm/badges/gpa.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 [![Test Coverage](https://codeclimate.com/github/octoblu/meshblu-npm/badges/coverage.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 
-Phase 1 - Build a network and realtime API for enabling machine-to-machine communications.
-
-Here are several quick screencasts that demostrate what you can do with Skynet:
+A network and realtime API for enabling machine-to-machine communications.
 
 [Screencast 1: What is Skynet?](http://www.youtube.com/watch?v=cPs1JNFyXjk)
 
-[Screencast 2: Introducing an Arduino](http://www.youtube.com/watch?v=SzaTPiaDDQI)
+[Documentation](https://meshblu.readme.io/v1.0)
 
-[Screencast 3: Security device tokens added](http://www.youtube.com/watch?v=TB6RyzT10EA)
-
-[Screencast 4: Node.JS NPM module released](http://www.youtube.com/watch?v=0WjNG6AOcXM)
-
-[Screencast 5: PubSub feature added to device UUID channels](https://www.youtube.com/watch?v=SL_c1MSgMaw)
-
-[Screencast 6: Events endpoint added to APIs](https://www.youtube.com/watch?v=GJqSabO1EUA)
+[What is Octoblu?](https://octoblu-designer.readme.io/)
 
 
 Example
 
+Require Meshblu
+
+```js
+var Meshblu = require('meshblu');
 ```
-var skynet = require('skynet');
 
-var conn = skynet.createConnection({
-  "uuid": "ad698900-2546-11e3-87fb-c560cb0ca47b",
-  "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
-  "protocol": "mqtt", // or "websocket"
-  "qos": 0, // MQTT Quality of Service (0=no confirmation, 1=confirmation, 2=N/A)
-  "server": "localhost", // optional - defaults to ws://meshblu-socket-io.octoblu.com
-  "port": 3000  // optional - defaults to 80
+Register device with cUrl
+```bash
+curl -X POST -d "type=example" http://meshblu.octoblu.com/devices
+```
+
+response
+```json
+{
+  "type":"example",
+  "discoverWhitelist":["*"],
+  "configureWhitelist":["*"],
+  "sendWhitelist":["*"],
+  "receiveWhitelist":["*"],
+  "uuid":"a28f068b-f19f-4f7b-9cf6-7c3d36c8aa14",
+  "online":false,
+  "token":"dcb61b31d2497da629ee33a9ac20cf397e24d093",
+  "meshblu":{
+    "createdAt":"2016-04-11T21:20:41+00:00",
+    "hash":"oQW/46H1UeC7+1QyDIy6wm5SGYiIgVMKxkVRK623DMY="}}
+```
+Create Connection with UUID/TOKEN
+```js
+var conn = Meshblu.createConnection({
+  "uuid": "a28f068b-f19f-4f7b-9cf6-7c3d36c8aa14",
+  "token": "dcb61b31d2497da629ee33a9ac20cf397e24d093",
+  "server": "meshblu.octoblu.com",
+  "port": 443
 });
+```
 
+Not Ready
+```js
 conn.on('notReady', function(data){
   console.log('UUID FAILED AUTHENTICATION!');
   console.log(data);
 });
+```
 
+On Ready
+```js
 conn.on('ready', function(data){
   console.log('UUID AUTHENTICATED!');
   console.log(data);
+});
+```
 
+Send Message
+```js
+  conn.message({
+    "devices": "*",
+    "payload": {
+      "meshblu":"online"
+    }
+  });
+```
+
+On Message
+```js
+  conn.on('message', function(message){
+    console.log('message received', message);
+  });
+```
+
+Subscribe
+```js
   // Subscribe to device
   conn.subscribe({
     "uuid": "f828ef20-29f7-11e3-9604-b360d462c699",
@@ -51,94 +93,83 @@ conn.on('ready', function(data){
   }, function (data) {
     console.log(data);
   });
+```
 
+Unsubscribe
+```js
   // Subscribe to device
   conn.unsubscribe({
     "uuid": "f828ef20-29f7-11e3-9604-b360d462c699"
   }, function (data) {
     console.log(data);
   });  
+```
 
-  // Send and receive messages
-  conn.message({
-    "devices": "*",
-    "payload": {
-      "skynet":"online"
-    },
-    "qos": 0
-  });
-  conn.message({
-    "devices": "0d3a53a0-2a0b-11e3-b09c-ff4de847b2cc",
-    "payload": {
-      "skynet":"online"
-    },
-    "qos": 0
-  });
-  conn.message({
-    "devices": ["0d3a53...847b2cc", "11123...44567"],
-    "payload": {
-      "skynet":"online"
-    },
-    "qos": 0
-  });
-
-  conn.on('message', function(channel, message){
-    console.log('message received', channel, message);
-  });
-
-
-  // Event triggered when device loses connection to skynet
+On Disconnect
+```js
   conn.on('disconnect', function(data){
-    console.log('disconnected from skynet');
+    console.log('disconnected from meshblu');
   });
+```
 
-  // Register a device (note: you can leave off the token to have skynet generate one for you)
+Register Device
+```js
   conn.register({
-    "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
     "type": "drone"
   }, function (data) {
     console.log(data);
   });
+```
 
-  // UnRegister a device
+Unregister Device
+```js
   conn.unregister({
-    "uuid": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
-    "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9"
+    "uuid": "",
+    "token": ""
   }, function (data) {
     console.log(data);
   });
+```
 
-
-  // Update device
+Update
+```js
   conn.update({
-    "uuid":"ad698900-2546-11e3-87fb-c560cb0ca47b",
-    "token": "zh4p7as90pt1q0k98fzvwmc9rmjkyb9",
+    "uuid":"",
+    "token": "",
     "armed":true
   }, function (data) {
     console.log(data);
   });
+```
 
-  // WhoAmI?
-  conn.whoami({"uuid":"ad698900-2546-11e3-87fb-c560cb0ca47b"}, function (data) {
+On Config
+```js
+  conn.on('config', function(data){
+    console.log('device updated', data);
+  });
+```
+
+Whoami
+```js
+  conn.whoami({"uuid":""}, function (data) {
     console.log(data);
   });
+```
 
-  // Receive an array of device UUIDs based on user defined search criteria
+Search Devices
+```js
   conn.devices({
     "type":"drone"
   }, function (data) {
     console.log(data);
   });
+```
 
-  // Skynet status
+Meshblu status
+```js
   conn.status(function (data) {
     console.log(data);
   });
-
-});
-
-
-
 ```
 
 LICENSE
