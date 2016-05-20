@@ -439,7 +439,7 @@ conn.revokeToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', token: '9e78f644
 
 ## conn.subscribe(params)
 
-Create a subscription to a device's messages. By default, subscribe tries to subscribe the connection to every type it has permission to view. To limit subscriptions, use the `types` attribute.
+Create a subscription to a device's messages. If the connection is authenticated as the target device's owner, subscribe tries to subscribe the connection to every message type. To limit subscriptions, use the `types` attribute. If the connection is authenticated as someone other than the owner, it only creates a `broadcast` subscription.
 
 ##### Arguments
 
