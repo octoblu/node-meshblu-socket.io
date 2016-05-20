@@ -20,6 +20,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.devices(query, callback)](#conndevicesquery-callback)
   * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
   * [conn.message(message)](#connmessagemessage)
+  * [conn.register(params, callback)](#connregisterparams-callback)
 
 # Getting Started
 
@@ -343,5 +344,72 @@ conn.message({
   data: {
     guys: '78159106-41ca-4022-95e8-2511695ce64c is a pretty awesome dude!'
   }
+});
+```
+
+## conn.register(params, callback)
+
+Register a new device with the Meshblu registry.
+
+##### Arguments
+
+* `params` A device object. May not include a `uuid` or `token`. All other properties will be saved to the device on creation. For a description of  the properties that will affect how Meshblu interacts with the device, see the [core Meshblu documentation](https://meshblu.readme.io/docs). If a `uuid` and/or `token` is provided, it will be ignored.
+* `callback` Function that is called with a `device` on registration
+  * `device` The newly registered Meshblu device. Make sure to save the `uuid` and `token`. The `token` will not be made available again as it is not stored in plain-text anywhere by Meshblu.
+
+##### Note
+
+The Socket.io implementation of Meshblu creates open devices using the old *(deprecated)* whitelists by default. This is to preserve backwards compatibility. It is strongly recommended to register devices with explicitly locked down [version 2.0.0 whitelists](https://meshblu.readme.io/docs/whitelists-2-0) instead by creating a v2.0.0 device (see the second example).
+
+##### Example
+
+To register a new (open) device
+
+```javascript
+conn.register({color: 'black'}, function(device){
+  console.log('register');
+  console.log(JSON.stringify(device, null, 2))
+  // {
+  //   "color": "black",
+  //   "discoverWhitelist": [
+  //     "*"
+  //   ],
+  //   "configureWhitelist": [
+  //     "*"
+  //   ],
+  //   "sendWhitelist": [
+  //     "*"
+  //   ],
+  //   "receiveWhitelist": [
+  //     "*"
+  //   ],
+  //   "uuid": "5c7392dc-a4ba-4b5a-8c84-5934a3b3678b",
+  //   "online": false,
+  //   "token": "9e78f644a866e1b5b71d0a2dde912e8662477abf",
+  //   "meshblu": {
+  //     "createdAt": "2016-05-20T22:10:23+00:00",
+  //     "hash": "kt8lmSb5r6ruHG41jqZZHp1CEQvzM1iMJ/kAUppryZo="
+  //   }
+  // }
+});
+```
+
+To register a new closed device.
+
+```javascript
+conn.register({color: 'black', version: '2.0.0'}, function(device){
+  console.log('register');
+  console.log(JSON.stringify(device, null, 2))
+  // {
+  //   "color": "black",
+  //   "uuid": "5c7392dc-a4ba-4b5a-8c84-5934a3b3678b",
+  //   "online": false,
+  //   "token": "9e78f644a866e1b5b71d0a2dde912e8662477abf",
+  //   "meshblu": {
+  //     "version": "2.0.0",
+  //     "createdAt": "2016-05-20T22:10:23+00:00",
+  //     "hash": "kt8lmSb5r6ruHG41jqZZHp1CEQvzM1iMJ/kAUppryZo="
+  //   }
+  // }
 });
 ```
