@@ -177,7 +177,7 @@ conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
   //     "online": true
   //   }
   // }
-})
+});
 ```
 
 When requesting a non-existing device, or a device the authenticated device may not view:
@@ -190,7 +190,7 @@ conn.device({uuid: 'i-made-this-uuid-up'}, function(result){
   // {
   //   "error": "Forbidden"
   // }
-})
+});
 ```
 
 ## conn.devices(query, callback)
@@ -229,7 +229,7 @@ conn.devices({color: 'blue'}, function(result){
   //     }
   //   ]
   // }
-})
+});
 ```
 
 When requesting a non-existing devices, or devices the authenticated device may not view:
@@ -242,7 +242,7 @@ conn.devices({color: 'i-made-this-color-up'}, function(result){
   // {
   //   "devices": []
   // }
-})
+});
 ```
 
 ## conn.generateAndStoreToken(query, callback)
@@ -278,7 +278,7 @@ conn.generateAndStoreToken({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, funct
   //   "createdAt": "2016-05-20T18:25:13.587Z",
   //   "token": "8234f58b65ff042da60d84af4230d3692778ca5b"
   // }
-})
+});
 ```
 
 When generateAndStoreToken is called for a non-existing devices, or devices the authenticated device may not update:
@@ -291,7 +291,7 @@ conn.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
   // {
   //   "error": "Forbidden"
   // }
-})
+});
 ```
 
 ## conn.message(message)
