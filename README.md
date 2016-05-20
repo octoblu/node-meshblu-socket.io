@@ -13,8 +13,9 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Quick Start](#quick-start)
 * [Events](#events)
   * [Event: 'ready'](#event-ready)
+  * [Event: 'notReady'](#event-notready)
 * [Methods](#methods)
-  * [createConnection](#createConnection)
+  * [createConnection](#createconnectionoptions)
 
 # Getting Started
 
@@ -51,22 +52,48 @@ conn.on('ready', function(){
 
 ## Event: 'ready'
 
-* `device` The device the connection is authenticated as.
-
-The device will always include the `uuid` and plain-text `token`. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+* `response` Response of a successful authentication.
+  * `uuid` UUID of the device the connection is authenticated as.
+  * `token` Plain-text token of the device the connection is authenticated as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+  * `api` *(deprecated)* A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * `status` *(deprecated)* A legacy status code kept for backwards compatibility. Should not be used in any new projects.
 
 ##### Example
 
 ```javascript
-conn.on('ready', function(device){
+conn.on('ready', function(response){
   console.log('ready');
-  console.log(JSON.stringify(device, null, 2));
+  console.log(JSON.stringify(response, null, 2));
   // ready
   // {
   //   "api": "connect",
   //   "status": 201,
   //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
   //   "token": "d5265dbc4576a88f8654a8fc2c4d46a6d7b85574"
+  // }
+});
+```
+
+## Event: 'notReady'
+
+* `response` Response of a failed authentication attempt.
+  * `uuid` UUID of the device the connection attempted to authenticated as.
+  * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+  * `api` *(deprecated)* A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * `status` *(deprecated)* A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+
+##### Example
+
+```javascript
+conn.on('notReady', function(response){
+  console.error('notReady');
+  console.error(JSON.stringify(response, null, 2));
+  // notReady
+  // {
+  //   "uuid": "i-made-this-uuid-up",
+  //   "token": "i-made-this-token-up",
+  //   "api": "connect",
+  //   "status": 401
   // }
 });
 ```
@@ -79,11 +106,11 @@ Establishes a socket.io connection to meshblu and returns the connection object.
 
 ##### Arguments
 
-* `options` - connection options with the following keys:
-  * `server` - The hostname of the Meshblu server to connect to. (Default: `meshblu-socket-io.octoblu.com`)
-  * `port` - The port of the Meshblu server to connect to. (Default: `443`)
-  * `uuid` - UUID of the device to connect with.
-  * `token` - Token of the device to connect with.
+* `options` connection options with the following keys:
+  * `server` The hostname of the Meshblu server to connect to. (Default: `meshblu-socket-io.octoblu.com`)
+  * `port` The port of the Meshblu server to connect to. (Default: `443`)
+  * `uuid` UUID of the device to connect with.
+  * `token` Token of the device to connect with.
 
 ##### Note
 
