@@ -16,7 +16,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Event: 'notReady'](#event-notready)
 * [Methods](#methods)
   * [createConnection](#createconnectionoptions)
-  * [conn.device](#conndevice)
+  * [conn.device](#conndevicequery-callback)
 
 # Getting Started
 
