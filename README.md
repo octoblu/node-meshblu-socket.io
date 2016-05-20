@@ -15,8 +15,8 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Event: 'ready'](#event-ready)
   * [Event: 'notReady'](#event-notready)
 * [Methods](#methods)
-  * [createConnection](#createconnectionoptions)
-  * [conn.device](#conndevicequery-callback)
+  * [createConnection(options)](#createconnectionoptions)
+  * [conn.device(query, callback)](#conndevicequery-callback)
 
 # Getting Started
 
@@ -136,8 +136,18 @@ Retrieve a device from the Meshblu device registry by it's `uuid`. In order to r
 
 * `query` Query object, must contain only the `uuid` property.
   * `uuid` UUID of the device to retrieve.
+* `callback` Function that will be called with a `result`.
+  * `result` Object passed to the callback. Contains either the `device` or `error` key, but never both.
+    * `device` The full device record from the Meshblu registry.
+    * `error` String explaining the what went wrong. Is only present if something went wrong
+
+##### Note
+
+In Meshblu, it is not possible to distinguish between a device not existing and not having permission to view a device. In most of the Meshblu API calls, the error in both cases yields the protocol-specific equivalent of an `HTTP 404: Not Found`. The Socket.IO API, however, returns the error `Forbidden`. This is for backwards compatibility and will likely change with the next major version release of the Socket.IO API.
 
 ##### Example
+
+When requesting a valid device that the authorized device may view:
 
 ```javascript
 conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
@@ -156,6 +166,19 @@ conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
   //     "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
   //     "online": true
   //   }
+  // }
+})
+```
+
+When requesting a non-existing device, or a device the authenticated device may not view:
+
+```javascript
+conn.device({uuid: 'i-made-this-uuid-up'}, function(result){
+  console.log('device');
+  console.log(JSON.stringify(result, null, 2));
+  // device
+  // {
+  //   "error": "Forbidden"
   // }
 })
 ```
