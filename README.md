@@ -59,9 +59,15 @@ The device will always include the `uuid` and plain-text `token`. The `token` is
 
 ```javascript
 conn.on('ready', function(device){
-  // prints:
-  // ready {"api":"connect","status":201,"uuid":"78159106-41ca-4022-95e8-2511695ce64c","token":"d5265dbc4576a88f8654a8fc2c4d46a6d7b85574"}
-  console.log('ready', JSON.stringify(device));
+  console.log('ready');
+  console.log(JSON.stringify(device, null, 2));
+  // ready
+  // {
+  //   "api": "connect",
+  //   "status": 201,
+  //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //   "token": "d5265dbc4576a88f8654a8fc2c4d46a6d7b85574"
+  // }
 });
 ```
 
