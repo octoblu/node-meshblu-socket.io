@@ -205,21 +205,21 @@ When requesting valid devices that the authorized device may view:
 conn.devices({color: 'blue'}, function(result){
   console.log('devices');
   console.log(JSON.stringify(result, null, 2));
-// devices
-// {
-//   "devices": [
-//     {
-//       "color": "blue",
-//       "discoverWhitelist": [ "*" ],
-//       "uuid": "c30a7506-7a45-4fe1-ab51-c57afad7f41a"
-//     },
-//     {
-//       "color": "blue",
-//       "discoverWhitelist": [ "*" ],
-//       "uuid": "7a9475ea-a595-42a4-8928-0aeb677c4990"
-//     }
-//   ]
-// }
+  // devices
+  // {
+  //   "devices": [
+  //     {
+  //       "color": "blue",
+  //       "discoverWhitelist": [ "*" ],
+  //       "uuid": "c30a7506-7a45-4fe1-ab51-c57afad7f41a"
+  //     },
+  //     {
+  //       "color": "blue",
+  //       "discoverWhitelist": [ "*" ],
+  //       "uuid": "7a9475ea-a595-42a4-8928-0aeb677c4990"
+  //     }
+  //   ]
+  // }
 })
 ```
 
