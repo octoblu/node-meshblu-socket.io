@@ -12,13 +12,14 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Install](#install)
   * [Quick Start](#quick-start)
 * [Events](#events)
-  * [Event: 'ready'](#event-ready)
-  * [Event: 'notReady'](#event-notready)
+  * [Event: "ready"](#event-ready)
+  * [Event: "notReady"](#event-notready)
 * [Methods](#methods)
   * [createConnection(options)](#createconnectionoptions)
   * [conn.device(query, callback)](#conndevicequery-callback)
   * [conn.devices(query, callback)](#conndevicesquery-callback)
   * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
+  * [conn.message(message)](#connmessagemessage)
 
 # Getting Started
 
@@ -53,13 +54,20 @@ conn.on('ready', function(){
 
 # Events
 
-## Event: 'ready'
+## Event: "ready"
 
 * `response` Response of a successful authentication.
   * `uuid` UUID of the device the connection is authenticated as.
   * `token` Plain-text token of the device the connection is authenticated as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
-  * `api` *(deprecated)* A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
-  * `status` *(deprecated)* A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+
+##### Note
+
+The `"ready"` event is emitted every time the connection is re-established. In normal network conditions, it is not uncommon the connection to occasionally drop and reestablish itself. In those cases, the library will re-authenticate and the brief outage will not be noticeable. Two things to note:
+
+* Messages sent to the device while it is reconnecting will not be delivered to the client.
+* Setting event listeners inside of the callback to the `"ready"` event is discouraged as they will be doubled up every time the event is fired. This may lead to functions being unexpectedly called multiple times for a single event. It presents itself as erratic behavior that appears to only happen after the connection has been established for a long time, and can therefore be very difficult to track down.
 
 ##### Example
 
@@ -77,13 +85,13 @@ conn.on('ready', function(response){
 });
 ```
 
-## Event: 'notReady'
+## Event: "notReady"
 
 * `response` Response of a failed authentication attempt.
   * `uuid` UUID of the device the connection attempted to authenticated as.
   * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
-  * `api` *(deprecated)* A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
-  * `status` *(deprecated)* A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
 
 ##### Example
 
@@ -117,7 +125,7 @@ Establishes a socket.io connection to meshblu and returns the connection object.
 
 ##### Note
 
-If the `uuid` and `token` options are omitted, Meshblu will create a new device when the connection is established and emit a `ready` event with the device's credentials. This will be the only time that device's `token` is available as plain text. This auto device creation feature exists for backwards compatibility, it's use in new projects is strongly discouraged.
+If the `uuid` and `token` options are omitted, Meshblu will create a new device when the connection is established and emit a `ready` event with the device's credentials. This will be the only time that device's `token` is available as plain text. This auto device creation feature exists for backwards compatibility, its use in new projects is strongly discouraged.
 
 ##### Example
 
@@ -239,7 +247,7 @@ conn.devices({color: 'i-made-this-color-up'}, function(result){
 
 ## conn.generateAndStoreToken(query, callback)
 
-Generate a token for a device in the Meshblu device registry. In order to generate a token, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+Generate a session token for a device in the Meshblu device registry. In order to generate a token, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
 ##### Arguments
 
@@ -284,4 +292,56 @@ conn.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
   //   "error": "Forbidden"
   // }
 })
+```
+
+## conn.message(message)
+
+Send a message to one or more Meshblu devices. In order to send a device a message, the connection must be authenticated as a device that is in the recipient's `message.from` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `message` Message object, must contain only the `devices` property. `topic` is treated special by Meshblu. Other properties are forwarded to the recipient(s), but Meshblu does not act on them in any way.
+  * `devices` Array of UUIDs of devices to send the message to. If any of the UUIDs are the special string `"*"`, then the message will also be emitted as a `broadcast` message, and can be picked up by anyone in the emitter's `broadcast.sent` whitelist.
+  * `topic` If the topic is provided as a string and the message is broadcast, the topic can be used by subscribers to filter incoming messages server-side.
+
+##### Note
+
+Meshblu does not currently provide any receipt confirmation natively. If a message is sent to an offline recipient that has no [message forwarding](https://meshblu.readme.io/docs/what-are-forwarders) or [device subscriptions](https://meshblu.readme.io/docs/how-subscriptions-work), the message will be dropped.
+
+##### Example
+
+To send a direct message.
+
+```javascript
+conn.message({
+  devices: ['78159106-41ca-4022-95e8-2511695ce64c'],
+  topic: 'greeting',
+  data: {
+    howdy: 'partner'
+  }
+});
+```
+
+To send a broadcast message.
+
+```javascript
+conn.message({
+  devices: ['*'],
+  topic: 'exclamation',
+  data: {
+    feeling: 'good'
+  }
+});
+```
+
+To send a message that is simultaneously broadcast and sent directly to a device.
+
+```javascript
+conn.message({
+  devices: ['*', '78159106-41ca-4022-95e8-2511695ce64c'],
+  topic: 'recommendation',
+  data: {
+    guys: '78159106-41ca-4022-95e8-2511695ce64c is a pretty awesome dude!'
+  }
+});
 ```
