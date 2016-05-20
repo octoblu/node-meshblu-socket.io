@@ -149,7 +149,7 @@ Retrieve a device from the Meshblu device registry by its `uuid`. In order to re
 * `callback` Function that will be called with a `result`.
   * `result` Object passed to the callback. Contains either the `device` or `error` key, but never both.
     * `device` The full device record from the Meshblu registry.
-    * `error` String explaining the what went wrong. Is only present if something went wrong
+    * `error` String explaining the what went wrong. Is only present if something went wrong.
 
 ##### Note
 
@@ -255,7 +255,7 @@ Generate a session token for a device in the Meshblu device registry. In order t
   * `uuid` UUID of the device to generate a token for.
 * `callback` Function that will be called with a `result`.
   * `result` Object passed to the callback. Contains either the (`uuid`, `token`, `createdAt`) triplet, or `error` key, but never both.
-    * `uuid` The uuid for which a token was generated
+    * `uuid` The uuid for which a token was generated.
     * `token` The token that was generated in plain-text form. *This is the only time that token will ever be shown. If it is not saved at this point, it can never be retreived*
     * `createdAt` An ISO 8601 timestamp for when the token was generated.
     * `error` String explaining the what went wrong. Is only present if something went wrong.
@@ -306,7 +306,7 @@ Send a message to one or more Meshblu devices. In order to send a device a messa
 
 ##### Note
 
-Meshblu does not currently provide any receipt confirmation natively. If a message is sent to an offline recipient that has no [message forwarding](https://meshblu.readme.io/docs/what-are-forwarders) or [device subscriptions](https://meshblu.readme.io/docs/how-subscriptions-work), the message will be dropped.
+Meshblu does not currently provide any receipt confirmation natively. If a message is sent to an offline recipient that has no [message forwarding](https://meshblu.readme.io/docs/what-are-forwarders) or [device subscriptions](https://meshblu.readme.io/docs/how-subscriptions-work), the message will be dropped. If it is important to know when the recipient received a message, it is recommended to have the recipient send some form of acknowledgement message back.
 
 ##### Example
 
