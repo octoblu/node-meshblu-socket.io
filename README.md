@@ -17,6 +17,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
 * [Methods](#methods)
   * [createConnection(options)](#createconnectionoptions)
   * [conn.device(query, callback)](#conndevicequery-callback)
+  * [conn.devices(query, callback)](#conndevicesquery-callback)
 
 # Getting Started
 
@@ -130,7 +131,7 @@ var conn = meshblu.createConnection({
 
 ## conn.device(query, callback)
 
-Retrieve a device from the Meshblu device registry by it's `uuid`. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+Retrieve a device from the Meshblu device registry by its `uuid`. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
 ##### Arguments
 
@@ -179,6 +180,58 @@ conn.device({uuid: 'i-made-this-uuid-up'}, function(result){
   // device
   // {
   //   "error": "Forbidden"
+  // }
+})
+```
+
+## conn.devices(query, callback)
+
+Retrieve devices from the Meshblu device registry. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query` Query object, filters the device that will be returned. With the exception of the following special cases, properties are used as filters. For example, passing a query of `{color: 'red'}` will yield all devices that contain a color key with value 'red' that the authorized connetion has access to.
+  * `online` If present, the value for `online` will be compared against the string "true", and the resulting boolean value will be used. *Note: using a boolean value of `true` will be evaluated as `false` because it is not equeal to "true"*.
+  * `"null"` & `""` If any key is passed in with a value of the string `"null"` or the empty string `""`, it will retrieve only devices that do not contain the key at all.
+* `callback` Function that will be called with a `result`.
+  * `result` Object passed to the callback. Contains the `devices` key.
+    * `devices` The devices retrieved from the Meshblu registry.
+
+##### Example
+
+When requesting valid devices that the authorized device may view:
+
+```javascript
+conn.devices({color: 'blue'}, function(result){
+  console.log('devices');
+  console.log(JSON.stringify(result, null, 2));
+// devices
+// {
+//   "devices": [
+//     {
+//       "color": "blue",
+//       "discoverWhitelist": [ "*" ],
+//       "uuid": "c30a7506-7a45-4fe1-ab51-c57afad7f41a"
+//     },
+//     {
+//       "color": "blue",
+//       "discoverWhitelist": [ "*" ],
+//       "uuid": "7a9475ea-a595-42a4-8928-0aeb677c4990"
+//     }
+//   ]
+// }
+})
+```
+
+When requesting a non-existing devices, or devices the authenticated device may not view:
+
+```javascript
+conn.devices({color: 'i-made-this-color-up'}, function(result){
+  console.log('devices');
+  console.log(JSON.stringify(result, null, 2));
+  // device
+  // {
+  //   "devices": []
   // }
 })
 ```
