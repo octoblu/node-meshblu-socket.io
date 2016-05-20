@@ -18,6 +18,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [createConnection(options)](#createconnectionoptions)
   * [conn.device(query, callback)](#conndevicequery-callback)
   * [conn.devices(query, callback)](#conndevicesquery-callback)
+  * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
 
 # Getting Started
 
@@ -232,6 +233,55 @@ conn.devices({color: 'i-made-this-color-up'}, function(result){
   // device
   // {
   //   "devices": []
+  // }
+})
+```
+
+## conn.generateAndStoreToken(query, callback)
+
+Generate a token for a device in the Meshblu device registry. In order to generate a token, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query` Query object, must contain only the `uuid` property.
+  * `uuid` UUID of the device to generate a token for.
+* `callback` Function that will be called with a `result`.
+  * `result` Object passed to the callback. Contains either the (`uuid`, `token`, `createdAt`) triplet, or `error` key, but never both.
+    * `uuid` The uuid for which a token was generated
+    * `token` The token that was generated in plain-text form. *This is the only time that token will ever be shown. If it is not saved at this point, it can never be retreived*
+    * `createdAt` An ISO 8601 timestamp for when the token was generated.
+    * `error` String explaining the what went wrong. Is only present if something went wrong.
+
+##### Note
+
+In Meshblu, it is not possible to distinguish between a device not existing and not having permission to view a device. In most of the Meshblu API calls, the error in both cases yields the protocol-specific equivalent of an `HTTP 404: Not Found`. The Socket.IO API, however, returns the error `Forbidden`. This is for backwards compatibility and will likely change with the next major version release of the Socket.IO API.
+
+##### Example
+
+When generateAndStoreToken is called for a valid device that the authorized device may update:
+
+```javascript
+conn.generateAndStoreToken({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
+  console.log('generateAndStoreToken');
+  console.log(JSON.stringify(result, null, 2));
+  // generateAndStoreToken
+  // {
+  //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //   "createdAt": "2016-05-20T18:25:13.587Z",
+  //   "token": "8234f58b65ff042da60d84af4230d3692778ca5b"
+  // }
+})
+```
+
+When generateAndStoreToken is called for a non-existing devices, or devices the authenticated device may not update:
+
+```javascript
+conn.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
+  console.log('generateAndStoreToken');
+  console.log(JSON.stringify(result, null, 2));
+  // generateAndStoreToken
+  // {
+  //   "error": "Forbidden"
   // }
 })
 ```
