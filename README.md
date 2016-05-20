@@ -127,3 +127,35 @@ var conn = meshblu.createConnection({
   token: 'd5265dbc4576a88f8654a8fc2c4d46a6d7b85574'
 });
 ```
+
+## conn.device(query, callback)
+
+Retrieve a device from the Meshblu device registry by it's `uuid`. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query` Query object, must contain only the `uuid` property.
+  * `uuid` UUID of the device to retrieve.
+
+##### Example
+
+```javascript
+conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
+  console.log('device');
+  console.log(JSON.stringify(result, null, 2));
+  // device
+  // {
+  //   "device": {
+  //     "meshblu": {
+  //       "version": "2.0.0",
+  //       "whitelists": {},
+  //       "createdAt": "2016-05-19T23:28:08+00:00",
+  //       "hash": "4ez1I/uziZVk7INf6n1un+op/oNsIDoFVs/MW/KGWMQ=",
+  //       "updatedAt": "2016-05-20T16:07:57+00:00"
+  //     },
+  //     "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //     "online": true
+  //   }
+  // }
+})
+```
