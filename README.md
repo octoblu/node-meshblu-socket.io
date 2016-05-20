@@ -55,7 +55,7 @@ conn.on('ready', function(){
 
 The device will always include the `uuid` and plain-text `token`. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
 
-### Example
+#### Example
 
 ```javascript
 conn.on('ready', function(device){
@@ -77,7 +77,7 @@ conn.on('ready', function(device){
 
 Establishes a socket.io connection to meshblu and returns the connection object.
 
-### Arguments
+#### Arguments
 
 * `options` - connection options with the following keys:
   * `server` - The hostname of the Meshblu server to connect to. (Default: `meshblu-socket-io.octoblu.com`)
@@ -85,11 +85,11 @@ Establishes a socket.io connection to meshblu and returns the connection object.
   * `uuid` - UUID of the device to connect with.
   * `token` - Token of the device to connect with.
 
-### Note
+#### Note
 
 If the `uuid` and `token` options are omitted, Meshblu will create a new device when the connection is established and emit a `ready` event with the device's credentials. This will be the only time that device's `token` is available as plain text. This auto device creation feature exists for backwards compatibility, it's use in new projects is strongly discouraged.
 
-### Example
+#### Example
 
 ```javascript
 var conn = meshblu.createConnection({
