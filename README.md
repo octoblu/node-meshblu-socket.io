@@ -1,199 +1,95 @@
-# meshblu-npm
+# node-meshblu-socket.io
 
 [![Build Status](https://travis-ci.org/octoblu/meshblu-npm.svg?branch=master)](https://travis-ci.org/octoblu/meshblu-npm)
 [![Code Climate](https://codeclimate.com/github/octoblu/meshblu-npm/badges/gpa.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 [![Test Coverage](https://codeclimate.com/github/octoblu/meshblu-npm/badges/coverage.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 
-A network and realtime API for enabling machine-to-machine communications.
+A client side library for using the [Meshblu Socket.IO API](https://meshblu-socketio.readme.io/) in [Node.js](https://nodejs.org)
 
-[Screencast 1: What is Skynet?](http://www.youtube.com/watch?v=cPs1JNFyXjk)
+# Table of Contents
 
-[Documentation](https://meshblu.readme.io/v1.0)
+* [Getting Started](#getting-started)
+  * [Install](#install)
+  * [Quick Start](#quick-start)
+* [Events](#events)
+  * [Event: 'ready'](#event-ready)
+* [Methods](#methods)
+  * [createConnection](#createConnection)
 
-[What is Octoblu?](https://octoblu-designer.readme.io/)
+# Getting Started
 
+## Install
 
-Example
+The Meshblu client-side library is best obtained through NPM:
 
-Require Meshblu
-
-```js
-var Meshblu = require('meshblu');
+```shell
+npm install --save meshblu
 ```
 
-Register device with cUrl
-```bash
-curl -X POST -d "type=example" http://meshblu.octoblu.com/devices
+Alternatively, a browser version of the library is available from https://cdn.octoblu.com/js/meshblu/latest/meshblu.bundle.js. This exposes a global object on `window.meshblu`.
+
+```html
+  <script type="text/javascript" src="https://cdn.octoblu.com/js/meshblu/latest/meshblu.bundle.js" ></script>
 ```
 
-response
-```json
-{
-  "type":"example",
-  "discoverWhitelist":["*"],
-  "configureWhitelist":["*"],
-  "sendWhitelist":["*"],
-  "receiveWhitelist":["*"],
-  "uuid":"a28f068b-f19f-4f7b-9cf6-7c3d36c8aa14",
-  "online":false,
-  "token":"dcb61b31d2497da629ee33a9ac20cf397e24d093",
-  "meshblu":{
-    "createdAt":"2016-04-11T21:20:41+00:00",
-    "hash":"oQW/46H1UeC7+1QyDIy6wm5SGYiIgVMKxkVRK623DMY="}}
-```
-Create Connection with UUID/TOKEN
-```js
-var conn = Meshblu.createConnection({
-  "uuid": "a28f068b-f19f-4f7b-9cf6-7c3d36c8aa14",
-  "token": "dcb61b31d2497da629ee33a9ac20cf397e24d093",
-  "server": "meshblu.octoblu.com",
-  "port": 443
+## Quick Start
+
+The client side library establishes a secure socket.io connection to Meshblu at `https://meshblu-socket-io.octoblu.com` by default.
+
+```javascript
+var meshblu = require('meshblu');
+var conn = meshblu.createConnection({
+  uuid: '78159106-41ca-4022-95e8-2511695ce64c',
+  token: 'd5265dbc4576a88f8654a8fc2c4d46a6d7b85574'
+});
+conn.on('ready', function(){
+  console.log('Ready to rock');
 });
 ```
 
-Not Ready
-```js
-conn.on('notReady', function(data){
-  console.log('UUID FAILED AUTHENTICATION!');
-  console.log(data);
+# Events
+
+## Event: 'ready'
+
+* `device` The device the connection is authenticated as.
+
+The device will always include the `uuid` and plain-text `token`. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+
+### Example
+
+```javascript
+conn.on('ready', function(device){
+  // prints:
+  // ready {"api":"connect","status":201,"uuid":"78159106-41ca-4022-95e8-2511695ce64c","token":"d5265dbc4576a88f8654a8fc2c4d46a6d7b85574"}
+  console.log('ready', JSON.stringify(device));
 });
 ```
 
-On Ready
-```js
-conn.on('ready', function(data){
-  console.log('UUID AUTHENTICATED!');
-  console.log(data);
+# Methods
+
+## createConnection(options)
+
+Establishes a socket.io connection to meshblu and returns the connection object.
+
+### Arguments
+
+* `options` - connection options with the following keys:
+  * `server` - The hostname of the Meshblu server to connect to. (Default: `meshblu-socket-io.octoblu.com`)
+  * `port` - The port of the Meshblu server to connect to. (Default: `443`)
+  * `uuid` - UUID of the device to connect with.
+  * `token` - Token of the device to connect with.
+
+### Note
+
+If the `uuid` and `token` options are omitted, Meshblu will create a new device when the connection is established and emit a `ready` event with the device's credentials. This will be the only time that device's `token` is available as plain text. This auto device creation feature exists for backwards compatibility, it's use in new projects is strongly discouraged.
+
+### Example
+
+```javascript
+var conn = meshblu.createConnection({
+  server: 'meshblu-socket-io.octoblu.com'
+  port: 443
+  uuid: '78159106-41ca-4022-95e8-2511695ce64c',
+  token: 'd5265dbc4576a88f8654a8fc2c4d46a6d7b85574'
 });
 ```
-
-Send Message
-```js
-  conn.message({
-    "devices": "*",
-    "payload": {
-      "meshblu":"online"
-    }
-  });
-```
-
-On Message
-```js
-  conn.on('message', function(message){
-    console.log('message received', message);
-  });
-```
-
-Subscribe
-```js
-  // Subscribe to device
-  conn.subscribe({
-    "uuid": "f828ef20-29f7-11e3-9604-b360d462c699",
-    "token": "syep2lu2d0io1or305llz5u9ijrwwmi"
-  }, function (data) {
-    console.log(data);
-  });
-```
-
-Unsubscribe
-```js
-  // Subscribe to device
-  conn.unsubscribe({
-    "uuid": "f828ef20-29f7-11e3-9604-b360d462c699"
-  }, function (data) {
-    console.log(data);
-  });  
-```
-
-On Disconnect
-```js
-  conn.on('disconnect', function(data){
-    console.log('disconnected from meshblu');
-  });
-```
-
-Register Device
-```js
-  conn.register({
-    "type": "drone"
-  }, function (data) {
-    console.log(data);
-  });
-```
-
-Unregister Device
-```js
-  conn.unregister({
-    "uuid": "",
-    "token": ""
-  }, function (data) {
-    console.log(data);
-  });
-```
-
-Update
-```js
-  conn.update({
-    "uuid":"",
-    "token": "",
-    "armed":true
-  }, function (data) {
-    console.log(data);
-  });
-```
-
-On Config
-```js
-  conn.on('config', function(data){
-    console.log('device updated', data);
-  });
-```
-
-Whoami
-```js
-  conn.whoami({"uuid":""}, function (data) {
-    console.log(data);
-  });
-```
-
-Search Devices
-```js
-  conn.devices({
-    "type":"drone"
-  }, function (data) {
-    console.log(data);
-  });
-```
-
-Meshblu status
-```js
-  conn.status(function (data) {
-    console.log(data);
-  });
-```
-
-LICENSE
--------
-
-(MIT License)
-
-Copyright (c) 2014 Octoblu <info@octoblu.com>
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
