@@ -21,6 +21,8 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
   * [conn.message(message)](#connmessagemessage)
   * [conn.register(params, callback)](#connregisterparams-callback)
+  * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
+  * [conn.subscribe(params)](#connsubscribeparams)
 
 # Getting Started
 
@@ -412,4 +414,53 @@ conn.register({color: 'black', version: '2.0.0'}, function(device){
   //   }
   // }
 });
+```
+
+## conn.revokeToken(auth, callback)
+
+Revoke a session token for a device
+
+##### Arguments
+
+* `auth` Authentication object, must contain only the `uuid` and `token` of the device to authenticate as.
+  * `uuid` UUID of the device to whose token to revoke
+  * `token` Token of the device to revoke
+* `callback` Function that is called after the token has been revoked.
+
+##### Example
+
+To revoke a token for a device:
+
+```javascript
+conn.revokeToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', token: '9e78f644a866e1b5b71d0a2dde912e8662477abf'}, function(){
+  console.log('revokeToken');
+});
+```
+
+## conn.subscribe(params)
+
+Create a subscription to a device's messages. By default, subscribe tries to subscribe the connection to every type it has permission to view. To limit subscriptions, use the `types` attribute.
+
+##### Arguments
+
+* `params`
+  * `uuid` UUID of the device to subscribe to.
+  * `topics` Array of topic strings to filter the incoming messages by. Will only allow through messages whose `topic` matches the filter. Wildcards (`*`) can be used to match a range of topics. Topics can be prefixed with a `-` to negate the filter.
+  * `types` Array of strings of types to subscribe to. Valid types are:
+    * `broadcast` broadcast messages sent by the device and messages the device receives as a result of it being subscribed to some other device's broadcasts.
+    * `received` messages received by the device and messages the device receives as a result of it being subscribed to some other device's received messages.
+    * `sent` messages sent by the device and messages the device receives as a result of it being subscribed to some other device's sent messages.
+
+##### Example
+
+To subscribe to everything allowed for a device:
+
+```javascript
+conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
+```
+
+To subscribe to only broadcasts not containing the topics that contain the string "pulse":
+
+```javascript
+conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', topics: ['-*pulse*'], type: ['broadcast']});
 ```
