@@ -24,7 +24,8 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
   * [conn.unsubscribe(params)](#connunsubscribeparams)
-  * [conn.update(query, update, callback)](#connupdatequeryupdate-callback)
+  * [conn.update(query, callback)](#connupdatequeryupdate-callback)
+  * [conn.whoami(obj, callback)](#connwhoamiobj-callback)
 
 # Getting Started
 
@@ -532,6 +533,41 @@ conn.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
   // {
   //   "uuid": "i-made-this-uuid-up",
   //   "status": 200
+  // }
+});
+```
+
+## conn.whoami(obj, callback)
+
+Retrieve the device the connection is currently authenticated as from the Meshblu device registery.
+
+##### Arguments
+
+* `obj` Object. Anything may be put here, but it will be ignored. Is preserved for backwards compatibility.
+* `callback` Function that will be called with a `result`.
+  * `device` Full device from the Meshblu device registry.
+
+##### Example
+
+Calling whoami:
+
+```javascript
+conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
+  console.log('whoami');
+  console.log(JSON.stringify(device, null, 2));
+  // whoami
+  // {
+  //   "device": {
+  //     "meshblu": {
+  //       "version": "2.0.0",
+  //       "whitelists": {},
+  //       "createdAt": "2016-05-19T23:28:08+00:00",
+  //       "hash": "4ez1I/uziZVk7INf6n1un+op/oNsIDoFVs/MW/KGWMQ=",
+  //       "updatedAt": "2016-05-20T16:07:57+00:00"
+  //     },
+  //     "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //     "online": true
+  //   }
   // }
 });
 ```
