@@ -544,7 +544,7 @@ Retrieve the device the connection is currently authenticated as from the Meshbl
 ##### Arguments
 
 * `obj` Object. Anything may be put here, but it will be ignored. Is preserved for backwards compatibility.
-* `callback` Function that will be called with a `result`.
+* `callback` Function that will be called with a `device`.
   * `device` Full device from the Meshblu device registry.
 
 ##### Example
@@ -566,6 +566,49 @@ conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
   //   },
   //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
   //   "online": true
+  // }
+});
+```
+
+## conn.unregister(query, callback)
+
+Remove a device from the Meshblu device registry. In order to unregister a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query` Query object, must contain only the `uuid` property.
+  * `uuid` UUID of the device to unregister.
+* `callback` Function that will be called with a `result`.
+  * `result` Response from the unregister call. Will contain either a `uuid` or an `error`, but never both.
+    * `uuid` Uuid of the device that was unregistered
+    * `error` String explaining the what went wrong. Is only present if something went wrong.
+
+##### Note
+
+In Meshblu, it is not possible to distinguish between a device not existing and not having permission to view a device. In most of the Meshblu API calls, the error in both cases yields the protocol-specific equivalent of an `HTTP 404: Not Found`. The Socket.IO API, however, returns the error `Forbidden`. This is for backwards compatibility and will likely change with the next major version release of the Socket.IO API.
+
+##### Example
+
+Calling unregister for a device we have permission to modify:
+
+```javascript
+conn.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result){
+  console.log('unregister');
+  console.log(JSON.stringify(result, null, 2));
+  // unregister
+  // {
+  //   "uuid": "f52d8b52-ef04-44d3-ae45-59dfec2f7663"
+  // }
+});
+```
+
+```javascript
+conn.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
+  console.log('unregister');
+  console.log(JSON.stringify(result, null, 2));
+  // unregister
+  // {
+  //   "error": "Forbidden"
   // }
 });
 ```
