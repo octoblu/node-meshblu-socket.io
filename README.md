@@ -23,6 +23,8 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.register(params, callback)](#connregisterparams-callback)
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
+  * [conn.unsubscribe(params)](#connunsubscribeparams)
+  * [conn.update(query, update, callback)](#connupdatequery-update-callback)
 
 # Getting Started
 
@@ -466,13 +468,13 @@ conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast'
 
 ## conn.unsubscribe(params)
 
-Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe the connection to every message type. To limit what is unsubscribed, use the `types` attribute.
+Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe the connection from every message type. To limit what is unsubscribed, use the `types` attribute.
 
 ##### Arguments
 
 * `params`
   * `uuid` UUID of the device to unsubscribe from.
-  * `types` Array of strings of types to subscribe to. Valid types are:
+  * `types` Array of strings of types to unsubscribe from. Valid types are:
     * `broadcast` broadcast messages sent by the device and messages the device receives as a result of it being subscribed to some other device's broadcasts.
     * `received` messages received by the device and messages the device receives as a result of it being subscribed to some other device's received messages.
     * `sent` messages sent by the device and messages the device receives as a result of it being subscribed to some other device's sent messages.
@@ -489,4 +491,47 @@ To unsubscribe from only broadcasts:
 
 ```javascript
 conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
+```
+
+## conn.update(query/update, callback)
+
+Update a device in the Meshblu device registry. In order to update a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query/update` Both the query and update object. Must contain at least a `uuid`. Other than the listed exceptions, all other parameters will overwrite the device in the registry.
+  * `uuid` UUID of the device to update. If omitted, it defaults to the UUID of the authenticated connection.
+* `callback` Function that will be called with a `result`.
+  * `result` Object passed to the callback.
+    * `uuid` The uuid of the device that was updated.
+    * `status` Status code of the update operation. Will always be `200`, even if the update did not happen.
+
+##### Example
+
+Updating a device:
+
+```javascript
+conn.update({uuid: 'c30a7506-7a45-4fe1-ab51-c57afad7f41a', color: 'blue'}, function(result){
+  console.log('update');
+  console.log(JSON.stringify(result, null, 2));
+  // update
+  // {
+  //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //   "status": 200
+  // }
+});
+```
+
+When updating a non-existing devices, or a device the authenticated connection may not update:
+
+```javascript
+conn.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
+  console.log('update');
+  console.log(JSON.stringify(result, null, 2));
+  // update
+  // {
+  //   "uuid": "i-made-this-uuid-up",
+  //   "status": 200
+  // }
+});
 ```
