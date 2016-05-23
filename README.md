@@ -439,13 +439,12 @@ conn.revokeToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', token: '9e78f644
 
 ## conn.subscribe(params)
 
-Create a subscription to a device's messages. If the connection is authenticated as the target device's owner, subscribe tries to subscribe the connection to every message type. To limit subscriptions, use the `types` attribute. If the connection is authenticated as someone other than the owner, it only creates a `broadcast` subscription.
+Create a subscription to a device's messages. Subscribe tries to subscribe the connection to every message type. To limit subscriptions, use the `types` attribute.
 
 ##### Arguments
 
 * `params`
   * `uuid` UUID of the device to subscribe to.
-  * `topics` Array of topic strings to filter the incoming messages by. Will only allow through messages whose `topic` matches the filter. Wildcards (`*`) can be used to match a range of topics. Topics can be prefixed with a `-` to negate the filter.
   * `types` Array of strings of types to subscribe to. Valid types are:
     * `broadcast` broadcast messages sent by the device and messages the device receives as a result of it being subscribed to some other device's broadcasts.
     * `received` messages received by the device and messages the device receives as a result of it being subscribed to some other device's received messages.
@@ -459,8 +458,35 @@ To subscribe to everything allowed for a device:
 conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
 ```
 
-To subscribe to only broadcasts not containing the topics that contain the string "pulse":
+To subscribe to only broadcasts:
 
 ```javascript
-conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', topics: ['-*pulse*'], type: ['broadcast']});
+conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
+```
+
+## conn.unsubscribe(params)
+
+Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe the connection to every message type. To limit what is unsubscribed, use the `types` attribute.
+
+##### Arguments
+
+* `params`
+  * `uuid` UUID of the device to unsubscribe from.
+  * `types` Array of strings of types to subscribe to. Valid types are:
+    * `broadcast` broadcast messages sent by the device and messages the device receives as a result of it being subscribed to some other device's broadcasts.
+    * `received` messages received by the device and messages the device receives as a result of it being subscribed to some other device's received messages.
+    * `sent` messages sent by the device and messages the device receives as a result of it being subscribed to some other device's sent messages.
+
+##### Example
+
+To unsubscribe from everything allowed for a device:
+
+```javascript
+conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
+```
+
+To unsubscribe from only broadcasts:
+
+```javascript
+conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
 ```
