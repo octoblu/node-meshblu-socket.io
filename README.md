@@ -24,7 +24,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
   * [conn.unsubscribe(params)](#connunsubscribeparams)
-  * [conn.update(query, update, callback)](#connupdatequery-update-callback)
+  * [conn.update(query, update, callback)](#connupdatequeryupdate-callback)
 
 # Getting Started
 
