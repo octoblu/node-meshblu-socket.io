@@ -557,17 +557,15 @@ conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
   console.log(JSON.stringify(device, null, 2));
   // whoami
   // {
-  //   "device": {
-  //     "meshblu": {
-  //       "version": "2.0.0",
-  //       "whitelists": {},
-  //       "createdAt": "2016-05-19T23:28:08+00:00",
-  //       "hash": "4ez1I/uziZVk7INf6n1un+op/oNsIDoFVs/MW/KGWMQ=",
-  //       "updatedAt": "2016-05-20T16:07:57+00:00"
-  //     },
-  //     "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
-  //     "online": true
-  //   }
+  //   "meshblu": {
+  //     "version": "2.0.0",
+  //     "whitelists": {},
+  //     "createdAt": "2016-05-19T23:28:08+00:00",
+  //     "hash": "4ez1I/uziZVk7INf6n1un+op/oNsIDoFVs/MW/KGWMQ=",
+  //     "updatedAt": "2016-05-20T16:07:57+00:00"
+  //   },
+  //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //   "online": true
   // }
 });
 ```
