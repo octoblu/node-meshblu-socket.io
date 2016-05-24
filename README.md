@@ -65,6 +65,8 @@ conn.on('ready', function(){
 
 ## Event: "config"
 
+The `config` event is emitted whenever a device is updated. Use the [`conn.subscribe`](#connsubscribeparams) API to subscribe to `config` events. In order to receive config events from a device, your connection must be authenticated as a device that is in the target device's `configure.sent` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
 * `device` Meshblu device that was modified
   * `uuid` Uuid of the device that was modified
 
@@ -92,6 +94,8 @@ otherConn.update({uuid: '78159106-41ca-4022-95e8-2511695ce64c', foo: 'bar'});
 
 ## Event: "message"
 
+The `message` event is emitted whenever a device sends or receives a message. Use the [`conn.subscribe`](#connsubscribeparams) API to subscribe to `message` events for a device. In order to receive broadcast from a device, your connection must be authenticated as a device that is in the target device's `broadcast.sent` whitelist. To receive message sent by a device, your connection must be in the target's `message.sent` whitelist. To receive messages from other devices, they must be in the authorized device's `message.from` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
 * `message` Message object that was received.
   * `devices` Array of UUIDs to whom the message was sent. It will contain the string `"*"`, If the message was a broadcast.
   * `fromUuid` Uuid of the device that sent the message. Is set by Meshblu, so it can be trusted as long as it is verified that the message was received through Meshblu.
@@ -117,6 +121,8 @@ otherConn.message({devices: ['*'], foo: 'bar'});
 
 ## Event: "notReady"
 
+The `notReady` event is emitted when certain things go wrong. These include emitting invalid authentication information in response to the `identify` challenge.
+
 * `response` Response of a failed authentication attempt.
   * `uuid` UUID of the device the connection attempted to authenticated as.
   * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
@@ -140,6 +146,8 @@ conn.on('notReady', function(response){
 ```
 
 ## Event: "ready"
+
+The `ready` event is emitted whenever the connection emits an `identity` and Meshblu accepts the credentials.
 
 * `response` Response of a successful authentication.
   * `uuid` UUID of the device the connection is authenticated as.
