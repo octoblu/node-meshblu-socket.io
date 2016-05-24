@@ -12,9 +12,10 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Install](#install)
   * [Quick Start](#quick-start)
 * [Events](#events)
-  * [Event: "ready"](#event-ready)
-  * [Event: "notReady"](#event-notready)
+  * [Event: "config"](#event-config)
   * [Event: "message"](#event-message)
+  * [Event: "notReady"](#event-notready)
+  * [Event: "ready"](#event-ready)
 * [Methods](#methods)
   * [createConnection(options)](#createconnectionoptions)
   * [conn.device(query, callback)](#conndevicequery-callback)
@@ -62,6 +63,82 @@ conn.on('ready', function(){
 
 # Events
 
+## Event: "config"
+
+* `device` Meshblu device that was modified
+  * `uuid` Uuid of the device that was modified
+
+##### Example
+
+```javascript
+conn.on('config', function(device){
+  console.log('on config');
+  console.log(JSON.stringify(device, null, 2));
+  // on config
+  // {
+  //   "meshblu": {
+  //     "version": "2.0.0",
+  //     "whitelists": {},
+  //     "hash": "9OAPxo5Yq1oTYNi1szGVBBlg4xuIVni47k8JhHYlXFk="
+  //     }
+  //   },
+  //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
+  //   "foo": "bar"
+  // }
+});
+
+otherConn.update({uuid: '78159106-41ca-4022-95e8-2511695ce64c', foo: 'bar'});
+```
+
+## Event: "message"
+
+* `message` Message object that was received.
+  * `devices` Array of UUIDs to whom the message was sent. It will contain the string `"*"`, If the message was a broadcast.
+  * `fromUuid` Uuid of the device that sent the message. Is set by Meshblu, so it can be trusted as long as it is verified that the message was received through Meshblu.
+
+##### Example
+
+```javascript
+conn.on('message', function(message){
+  console.log('on message');
+  console.log(JSON.stringify(message, null, 2));
+  // on message
+  // {
+  //   "devices": [
+  //     "*"
+  //   ],
+  //   "foo": "bar",
+  //   "fromUuid": "1f6d9e7b-059b-4c1a-b699-708948ad8e10"
+  // }
+});
+
+otherConn.message({devices: ['*'], foo: 'bar'});
+```
+
+## Event: "notReady"
+
+* `response` Response of a failed authentication attempt.
+  * `uuid` UUID of the device the connection attempted to authenticated as.
+  * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+
+##### Example
+
+```javascript
+conn.on('notReady', function(response){
+  console.error('notReady');
+  console.error(JSON.stringify(response, null, 2));
+  // notReady
+  // {
+  //   "uuid": "i-made-this-uuid-up",
+  //   "token": "i-made-this-token-up",
+  //   "api": "connect",
+  //   "status": 401
+  // }
+});
+```
+
 ## Event: "ready"
 
 * `response` Response of a successful authentication.
@@ -89,54 +166,6 @@ conn.on('ready', function(response){
   //   "token": "d5265dbc4576a88f8654a8fc2c4d46a6d7b85574",
   //   "api": "connect",
   //   "status": 201
-  // }
-});
-```
-
-## Event: "notReady"
-
-* `response` Response of a failed authentication attempt.
-  * `uuid` UUID of the device the connection attempted to authenticated as.
-  * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
-  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
-  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
-
-##### Example
-
-```javascript
-conn.on('notReady', function(response){
-  console.error('notReady');
-  console.error(JSON.stringify(response, null, 2));
-  // notReady
-  // {
-  //   "uuid": "i-made-this-uuid-up",
-  //   "token": "i-made-this-token-up",
-  //   "api": "connect",
-  //   "status": 401
-  // }
-});
-```
-
-## Event: "message"
-
-* `message` Message object that was received.
-  * `devices` Array of UUIDs to whom the message was sent. It will contain the string `"*"`, If the message was a broadcast.
-  * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
-  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
-  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
-
-##### Example
-
-```javascript
-conn.on('notReady', function(response){
-  console.error('notReady');
-  console.error(JSON.stringify(response, null, 2));
-  // notReady
-  // {
-  //   "uuid": "i-made-this-uuid-up",
-  //   "token": "i-made-this-token-up",
-  //   "api": "connect",
-  //   "status": 401
   // }
 });
 ```
