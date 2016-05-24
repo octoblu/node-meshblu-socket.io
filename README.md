@@ -14,6 +14,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
 * [Events](#events)
   * [Event: "ready"](#event-ready)
   * [Event: "notReady"](#event-notready)
+  * [Event: "message"](#event-message)
 * [Methods](#methods)
   * [createConnection(options)](#createconnectionoptions)
   * [conn.device(query, callback)](#conndevicequery-callback)
@@ -23,6 +24,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.register(params, callback)](#connregisterparams-callback)
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
+  * [conn.unregister(query, callback)](#connunregisterquery-callback)
   * [conn.unsubscribe(params)](#connunsubscribeparams)
   * [conn.update(query, callback)](#connupdatequeryupdate-callback)
   * [conn.whoami(obj, callback)](#connwhoamiobj-callback)
@@ -95,6 +97,30 @@ conn.on('ready', function(response){
 
 * `response` Response of a failed authentication attempt.
   * `uuid` UUID of the device the connection attempted to authenticated as.
+  * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
+  * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
+  * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
+
+##### Example
+
+```javascript
+conn.on('notReady', function(response){
+  console.error('notReady');
+  console.error(JSON.stringify(response, null, 2));
+  // notReady
+  // {
+  //   "uuid": "i-made-this-uuid-up",
+  //   "token": "i-made-this-token-up",
+  //   "api": "connect",
+  //   "status": 401
+  // }
+});
+```
+
+## Event: "message"
+
+* `message` Message object that was received.
+  * `devices` Array of UUIDs to whom the message was sent. It will contain the string `"*"`, If the message was a broadcast.
   * `token` Plain-text token of the device the connection attempted to authenticate as. The `token` is passed through by the API so that it can be returned here, it is never stored as plain text by Meshblu.
   * *(deprecated)* `api` A legacy identifier kept for backwards compatibility. Should not be used in any new projects.
   * *(deprecated)* `status` A legacy status code kept for backwards compatibility. Should not be used in any new projects.
@@ -467,6 +493,51 @@ To subscribe to only broadcasts:
 conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
 ```
 
+## conn.unregister(query, callback)
+
+Remove a device from the Meshblu device registry. In order to unregister a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+
+##### Arguments
+
+* `query` Query object, must contain only the `uuid` property.
+  * `uuid` UUID of the device to unregister.
+* `callback` Function that will be called with a `result`.
+  * `result` Response from the unregister call. Will contain either a `uuid` or an `error`, but never both.
+    * `uuid` Uuid of the device that was unregistered
+    * `error` String explaining the what went wrong. Is only present if something went wrong.
+
+##### Note
+
+In Meshblu, it is not possible to distinguish between a device not existing and not having permission to view a device. In most of the Meshblu API calls, the error in both cases yields the protocol-specific equivalent of an `HTTP 404: Not Found`. The Socket.IO API, however, returns the error `Forbidden`. This is for backwards compatibility and will likely change with the next major version release of the Socket.IO API.
+
+##### Example
+
+When unregister is called for a device the authenticated device may modify:
+
+```javascript
+conn.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result){
+  console.log('unregister');
+  console.log(JSON.stringify(result, null, 2));
+  // unregister
+  // {
+  //   "uuid": "f52d8b52-ef04-44d3-ae45-59dfec2f7663"
+  // }
+});
+```
+
+When unregister is called for a non-existing device, or device the authenticated device may modify:
+
+```javascript
+conn.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
+  console.log('unregister');
+  console.log(JSON.stringify(result, null, 2));
+  // unregister
+  // {
+  //   "error": "Forbidden"
+  // }
+});
+```
+
 ## conn.unsubscribe(params)
 
 Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe the connection from every message type. To limit what is unsubscribed, use the `types` attribute.
@@ -550,6 +621,7 @@ Retrieve the device the connection is currently authenticated as from the Meshbl
 ##### Example
 
 Calling whoami:
+When whoami is called:
 
 ```javascript
 conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
@@ -566,49 +638,6 @@ conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
   //   },
   //   "uuid": "78159106-41ca-4022-95e8-2511695ce64c",
   //   "online": true
-  // }
-});
-```
-
-## conn.unregister(query, callback)
-
-Remove a device from the Meshblu device registry. In order to unregister a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
-
-##### Arguments
-
-* `query` Query object, must contain only the `uuid` property.
-  * `uuid` UUID of the device to unregister.
-* `callback` Function that will be called with a `result`.
-  * `result` Response from the unregister call. Will contain either a `uuid` or an `error`, but never both.
-    * `uuid` Uuid of the device that was unregistered
-    * `error` String explaining the what went wrong. Is only present if something went wrong.
-
-##### Note
-
-In Meshblu, it is not possible to distinguish between a device not existing and not having permission to view a device. In most of the Meshblu API calls, the error in both cases yields the protocol-specific equivalent of an `HTTP 404: Not Found`. The Socket.IO API, however, returns the error `Forbidden`. This is for backwards compatibility and will likely change with the next major version release of the Socket.IO API.
-
-##### Example
-
-Calling unregister for a device we have permission to modify:
-
-```javascript
-conn.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result){
-  console.log('unregister');
-  console.log(JSON.stringify(result, null, 2));
-  // unregister
-  // {
-  //   "uuid": "f52d8b52-ef04-44d3-ae45-59dfec2f7663"
-  // }
-});
-```
-
-```javascript
-conn.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
-  console.log('unregister');
-  console.log(JSON.stringify(result, null, 2));
-  // unregister
-  // {
-  //   "error": "Forbidden"
   // }
 });
 ```
