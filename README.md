@@ -131,6 +131,8 @@ The `notReady` event is emitted when certain things go wrong. These include emit
 
 ##### Example
 
+When an incorrect `identity` event is rejected by Meshblu
+
 ```javascript
 conn.on('notReady', function(response){
   console.error('notReady');
@@ -163,6 +165,8 @@ The `"ready"` event is emitted every time the connection is re-established. In n
 * Setting event listeners inside of the callback to the `"ready"` event is discouraged as they will be doubled up every time the event is fired. This may lead to functions being unexpectedly called multiple times for a single event. It presents itself as erratic behavior that appears to only happen after the connection has been established for a long time, and can therefore be very difficult to track down.
 
 ##### Example
+
+When a valid `identity` is accepted by Meshblu:
 
 ```javascript
 conn.on('ready', function(response){
