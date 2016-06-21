@@ -1,25 +1,76 @@
+{beforeEach, describe, it} = global
+{expect} = require 'chai'
+sinon    = require 'sinon'
+
 {EventEmitter} = require 'events'
-Connection     = require '../../lib/Connection'
-NodeRSA = require 'node-rsa'
+fs             = require 'fs'
+_              = require 'lodash'
+NodeRSA        = require 'node-rsa'
+path           = require 'path'
+
+Connection     = require '../../src/connection'
 
 describe 'Connection', ->
+
+  describe.only '-> connect', ->
+    describe 'when instantiated with a protocol, hostname, and port', ->
+      beforeEach (done) ->
+        @socket = new EventEmitter()
+        @socketIoClient = sinon.spy(=> @socket)
+
+        @sut = new Connection protocol: 'wss', hostname: 'meshblu.octoblu.com', port: 443, {
+          socketIoClient: @socketIoClient
+          console: @console
+        }
+        @sut.connect done
+        @socket.emit 'connect'
+
+      it 'should instantiate the socket client with the url', ->
+        expect(@socketIoClient).to.have.been.calledWith 'wss://meshblu.octoblu.com:443'
+
+    describe 'when instantiated with a service, domain, resolveSrv, and dns lookup succeeds', ->
+      beforeEach (done) ->
+        @socket = new EventEmitter()
+        @socketIoClient = sinon.spy(=> @socket)
+        @resolveSrv = sinon.stub().withArgs('_meshblu._socket-io-wss.octoblu.test').yields null, [{
+          piority: 1
+          weight: 1
+          port: 443
+          name: 'meshblu-socket-io.octoblu.test'
+        }]
+
+
+        @sut = new Connection service: 'meshblu', domain: 'octoblu.test', resolveSrv: true, {
+          socketIoClient: @socketIoClient
+          console: @console
+          dns: {resolveSrv: @resolveSrv}
+        }
+        @sut.connect done
+        @socket.emit 'connect'
+
+      it 'should instantiate the socket client with the resolved service hostname and port', ->
+        expect(@socketIoClient).to.have.been.calledWith 'wss://meshblu-socket-io.octoblu.test:443'
+
   describe 'when we pass in a fake socket.io', ->
     beforeEach ->
+      @socket = new EventEmitter()
+
       @console = error: sinon.spy()
-      @sut = new Connection( {}, {
-        socketIoClient: -> new EventEmitter(),
+      @sut = new Connection uuid: 'cats', token: 'dogs', {
+        socketIoClient: => @socket
         console: @console
-      })
+      }
 
     it 'should instantiate', ->
       expect(@sut).to.exist
 
-    describe 'when connect, then ready, then disconnect', ->
-      beforeEach ->
-        @socket = @sut.socket
+    it 'should have a function called "resetToken"', ->
+      expect(@sut.resetToken).to.be.a 'function'
+
+    describe 'when connected', ->
+      beforeEach (done) ->
+        @sut.connect done
         @socket.emit 'connect'
-        @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
-        @socket.emit 'disconnect'
 
       it 'should emit the uuid and token on identify', (done) ->
         @socket.on 'identity', (config) ->
@@ -28,103 +79,52 @@ describe 'Connection', ->
           done()
         @socket.emit 'identify'
 
-    it 'should have a function called "resetToken"', ->
-      expect(@sut.resetToken).to.exist
-
     describe 'when connect, then ready', ->
-      beforeEach ->
-        @socket = @sut.socket
+      beforeEach (done) ->
+        @sut.connect done
         @socket.emit 'connect'
         @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
       describe 'when subscribe and the socket reconnects', ->
         beforeEach ->
-          @sut.bufferedSocketEmit = sinon.spy()
+          @onSubscribeSpy = sinon.spy()
+          @socket.on 'subscribe', @onSubscribeSpy
+
           @sut.subscribe uuid: 'this'
-          sinon.spy @sut.socket, 'emit'
-          @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
         it 'should re subscribe to the "this"', ->
-          expect(@sut.bufferedSocketEmit).to.have.been.calledWith 'subscribe', uuid: 'this'
+          expect(@onSubscribeSpy).to.have.been.calledWith uuid: 'this'
 
       describe 'when subscribed to foo and the socket reconnects', ->
-        beforeEach ->
-          @sut.bufferedSocketEmit = sinon.spy()
+        beforeEach (done) ->
           @sut.subscribe uuid: 'foo'
-          sinon.spy @sut.socket, 'emit'
+
+          @onSubscribeSpy = sinon.spy()
+          @socket.on 'subscribe', @onSubscribeSpy
+          @socket.once 'subscribe', => done()
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
-        it 'should re subscribe to the "this"', ->
-          expect(@sut.bufferedSocketEmit).to.have.been.calledWith 'subscribe', uuid: 'foo'
+        it 'should re subscribe to the "foo"', ->
+          expect(@onSubscribeSpy).to.have.been.calledWith uuid: 'foo'
 
       describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
-        beforeEach ->
+        beforeEach (done) ->
+          @socket.once 'subscribe', => done()
           @sut.subscribe uuid: 'foo'
+
+        beforeEach (done) ->
+          @socket.once 'unsubscribe', => done()
           @sut.unsubscribe uuid: 'foo'
-          sinon.spy @sut.socket, 'emit'
+
+        beforeEach (done) ->
+          @onSubscribeSpy = sinon.spy()
+
+          @socket.on 'subscribe', @onSubscribeSpy
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+          _.delay done, 100
 
-        it 'should re subscribe to the "this"', ->
-          expect(@socket.emit).not.to.have.been.calledWith 'subscribe', uuid: 'foo'
-
-    it 'should have a function called "resetToken"', ->
-      expect(@sut.resetToken).to.exist
-
-    describe '-> parseUrl', ->
-      beforeEach ->
-        @sut = new Connection( {}, {
-          socketIoClient: -> new EventEmitter(),
-          console: @console
-          })
-
-      describe 'when nil', ->
-        it 'should return nothing', ->
-          console.log(@sut.parseUrl)
-          expect(@sut.parseUrl()).to.be.null
-
-      describe 'when given an empty string', ->
-        it 'should return nothing', ->
-          expect(@sut.parseUrl('')).to.be.null
-
-      describe 'when given a web socket URL', ->
-        it 'should return a url', ->
-          expect(@sut.parseUrl('ws://something.co')).to.equal('ws://something.co')
-
-      describe 'when given an http URL', ->
-        it 'should return a websocket url', ->
-          expect(@sut.parseUrl('http://something.co')).to.equal('ws://something.co/')
-
-      describe 'when given a wss URL', ->
-        it 'should return a wss url', ->
-          expect(@sut.parseUrl('wss://something.co')).to.equal('wss://something.co')
-
-      describe 'when given an https URL', ->
-        it 'should return a secure websocket url', ->
-          expect(@sut.parseUrl('https://something.co')).to.equal('wss://something.co/')
-
-      describe 'when given a url with a hostname and no protocol', ->
-        it 'should return a websocket url', ->
-          expect(@sut.parseUrl('something.co')).to.equal('ws://something.co')
-
-      describe 'when given a url with a hostname and a port', ->
-        it 'should return a secure websocket url', ->
-          expect(@sut.parseUrl('something.co', 443)).to.equal('wss://something.co:443')
-
-      describe 'when given a url with a hostname and a custom port', ->
-        it 'should return a websocket url with the port', ->
-          expect(@sut.parseUrl('http://something.co', 333)).to.equal('ws://something.co:333/')
-
-      describe 'when given a url with a url with port, and a custom port', ->
-        it 'should return a websocket url with the port', ->
-          expect(@sut.parseUrl('http://something.co:443', 555)).to.equal('ws://something.co:555/')
-
-      describe 'when given a url with a url with port, and a ssl port as a string', ->
-        it 'should return a websocket url with the port', ->
-          expect(@sut.parseUrl('ws://something.co', '443')).to.equal('wss://something.co:443')
-
-      describe 'when given a url with a url with port, and an invalid port as a string', ->
-        it 'should return a websocket url with the port', ->
-          expect(@sut.parseUrl('ws://something.co', 'jjk')).to.equal('ws://something.co')
+        it 'should not re subscribe to "foo"', ->
+          expect(@onSubscribeSpy).not.to.have.been.called
 
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
@@ -211,7 +211,8 @@ describe 'Connection', ->
           @sut.encryptMessage @uuid, 'encrypt-this', @options, @callback
 
         it 'should call message with the options ', ->
-          expect(@sut.message).to.have.been.calledWith @uuid, null, {payload: 'plain-text', encryptedPayload: '54321'}, @callback
+          expectedOptions = {payload: 'plain-text', encryptedPayload: '54321'}
+          expect(@sut.message).to.have.been.calledWith @uuid, null, expectedOptions, @callback
 
     describe 'sign', ->
       beforeEach ->
@@ -273,7 +274,6 @@ describe 'Connection', ->
           @sut.privateKey.verify.returns false
           expect(@sut.verify()).to.be.false
 
-
     describe 'getPublicKey', ->
       it 'should exist', ->
         expect(@sut.getPublicKey).to.exist
@@ -312,9 +312,8 @@ describe 'Connection', ->
 
           describe 'when device returns a valid device with a public key', ->
             beforeEach ->
-              @publicKey = '-----BEGIN PUBLIC KEY-----\nMFswDQYJKoZIhvcNAQEBBQADSgAwRwJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWA\nT0QRcsAHeDNy4HwNrME7xxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQAB\n-----END PUBLIC KEY-----'
-
-              @privateKey = new NodeRSA '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
+              @publicKey = fs.readFileSync path.join(__dirname, 'public.key')
+              @privateKey = new NodeRSA fs.readFileSync path.join(__dirname, 'private.key')
               @sut.socket.emit.yields null, @publicKey
 
             it 'should call the callback without an error', ->
@@ -349,11 +348,11 @@ describe 'Connection', ->
 
           @nodeRSA = new FakeNodeRSA()
 
-          @sut = new Connection( {}, {
+          @sut = new Connection {}, {
             socketIoClient: -> new EventEmitter(),
             console: @console
             NodeRSA: => @nodeRSA
-          });
+          }
           @result = @sut.generateKeyPair()
 
         it 'should have called generateKeyPair on an instance of nodeRSA', ->
@@ -368,7 +367,7 @@ describe 'Connection', ->
     describe 'when we create a connection with a private key', ->
       beforeEach ->
         @console = error: sinon.spy()
-        @privateKey = '-----BEGIN RSA PRIVATE KEY-----\nMIIBOAIBAAJAX9eHOOux3ycXbc/FVzM+z9OQeouRePWAT0QRcsAHeDNy4HwNrME7\nxxI2LH36g8H3S+zCapYYdCyc1LwSDEAfcQIDAQABAkA+59C6PIDvzdGj4rZM6La2\nY881j7u4n7JK1It7PKzqaFPzY+Aee0tRp1kOF8+/xOG1NGYLFyYBbCM38bnjnkwB\nAiEAqzkA7zUZl1at5zoERm9YyV/FUntQWBYCvdWS+5U7G8ECIQCPS8hY8yZwOL39\n8JuCJl5TvkGRg/w3GFjAo1kwJKmvsQIgNoRw8rlCi7hSqNQFNnQPnha7WlbfLxzb\nBJyzLx3F80ECIGjiPi2lI5BmZ+IUF67mqIpBKrr40UX+Yw/1QBW18CGxAiBPN3i9\nIyTOw01DUqSmXcgrhHJM0RogYtJbpJkT6qbPXw==\n-----END RSA PRIVATE KEY-----'
+        @privateKey = fs.readFileSync path.join(__dirname, 'private.key')
         @sut = new Connection( { privateKey: @privateKey }, {
           socketIoClient: -> new EventEmitter(),
           console: @console
@@ -443,7 +442,7 @@ describe 'Connection', ->
           expect(messageObject).to.deep.equal {devices: 2, payload: @object}
 
       describe 'when message is called with a callback', ->
-         it 'should call emitWithAck with a callback', ->
+        it 'should call emitWithAck with a callback', ->
           @callback = sinon.spy()
           @object = {}
           @sut.message 1, @object, @callback

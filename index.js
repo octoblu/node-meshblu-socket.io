@@ -1,8 +1,10 @@
-var Connection = require('./lib/Connection');
+require('coffee-script/register');
+var Connection = require('./src/Connection');
 
 module.exports = {
   createConnection: function (opt){
-    return new Connection(opt);
+    var connection = new Connection(opt);
+    connection.connect();
+    return connection;
   }
-}
-
+};
