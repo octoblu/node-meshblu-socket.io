@@ -8,9 +8,16 @@ _              = require 'lodash'
 NodeRSA        = require 'node-rsa'
 path           = require 'path'
 
-Connection     = require '../../src/connection'
+Connection     = require '../../'
+
 
 describe 'Connection', ->
+  beforeEach 'construct fake buffered socket', ->
+    @socket = new EventEmitter
+    @socket.connect = sinon.stub()
+    @socket.send    = sinon.spy()
+    @BufferedSocket = sinon.spy => @socket
+
   describe '-> constructor', ->
     describe 'when constructed with !resolveSrv and a domain', ->
       it 'should throw an exception', ->
@@ -70,102 +77,83 @@ describe 'Connection', ->
 
   describe 'when we pass in a fake socket.io', ->
     beforeEach ->
-      @socket = new EventEmitter()
-      @socket.connect = sinon.stub()
-      @socket.send = sinon.stub()
-
       @console = error: sinon.spy()
-      @sut = new Connection uuid: 'cats', token: 'dogs', {
-        BufferedSocket: => @socket
+      @sut = new Connection uuid: 'cats', token: 'dogs', auto_set_online: true, {
+        BufferedSocket: @BufferedSocket
         console: @console
       }
 
     it 'should instantiate', ->
       expect(@sut).to.exist
 
-    it 'should have a function called "resetToken"', ->
-      expect(@sut.resetToken).to.be.a 'function'
-
     describe 'when connected', ->
       beforeEach (done) ->
         @sut.connect done
+        @socket.connect.yield null
         @socket.emit 'connect'
 
-      it.only 'should emit the uuid and token on identify', (done) ->
-        @socket.on 'identity', (config) ->
-          expect(config.uuid).to.deep.equal 'cats'
-          expect(config.token).to.deep.equal 'dogs'
-          done()
+      it 'should send identity with the uuid and token on identify', ->
         @socket.emit 'identify'
+        expect(@socket.send).to.have.been.calledWith 'identity', {
+          uuid: 'cats'
+          token: 'dogs'
+          auto_set_online: true
+        }
 
     describe 'when connect, then ready', ->
       beforeEach (done) ->
         @sut.connect done
-        @socket.emit 'connect'
+        @socket.connect.yield null
         @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
-      describe 'when subscribe and the socket reconnects', ->
+      describe 'when subscribe is called', ->
         beforeEach ->
-          @onSubscribeSpy = sinon.spy()
-          @socket.on 'subscribe', @onSubscribeSpy
-
           @sut.subscribe uuid: 'this'
 
-        it 'should re subscribe to the "this"', ->
-          expect(@onSubscribeSpy).to.have.been.calledWith uuid: 'this'
+        it 'should subscribe to the "this"', ->
+          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'this'
 
       describe 'when subscribed to foo and the socket reconnects', ->
-        beforeEach (done) ->
+        beforeEach ->
           @sut.subscribe uuid: 'foo'
-
-          @onSubscribeSpy = sinon.spy()
-          @socket.on 'subscribe', @onSubscribeSpy
-          @socket.once 'subscribe', => done()
+          @socket.send.reset()
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
-        it 'should re subscribe to the "foo"', ->
-          expect(@onSubscribeSpy).to.have.been.calledWith uuid: 'foo'
+        it 'should re-subscribe to the "foo"', ->
+          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'foo'
 
       describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
         beforeEach (done) ->
-          @socket.once 'subscribe', => done()
           @sut.subscribe uuid: 'foo'
-
-        beforeEach (done) ->
-          @socket.once 'unsubscribe', => done()
           @sut.unsubscribe uuid: 'foo'
+          @socket.send.reset()
 
-        beforeEach (done) ->
-          @onSubscribeSpy = sinon.spy()
-
-          @socket.on 'subscribe', @onSubscribeSpy
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
           _.delay done, 100
 
-        it 'should not re subscribe to "foo"', ->
-          expect(@onSubscribeSpy).not.to.have.been.called
+        it 'should not re-subscribe to "foo"', ->
+          expect(@socket.send).not.to.have.been.called
 
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
-        @sut.socket.emit = sinon.spy @sut.socket.emit
-
-      it 'emit resetToken with the uuid', ->
         @sut.resetToken 'uuid'
-        expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid: 'uuid'
+
+      it 'should send resetToken with the uuid', ->
+        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid'
 
     describe 'when resetToken is called with a different uuid', ->
       beforeEach ->
-        @sut.socket.emit = sinon.spy @sut.socket.emit
-      it 'emit resetToken with the uuid', ->
         @sut.resetToken 'uuid2'
-        expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid: 'uuid2'
+
+      it 'emit resetToken with the uuid', ->
+        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid2'
 
     describe 'when resetToken is called with an object containing a uuid', ->
       beforeEach ->
-        @sut.socket.emit = sinon.spy @sut.socket.emit
-      it 'emit resetToken with the uuid', ->
         @sut.resetToken uuid: 'uuid3'
-        expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid:'uuid3'
+
+      it 'emit resetToken with the uuid', ->
+        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid3'
 
     describe 'when resetToken is called with a uuid and a callback', ->
       beforeEach ->

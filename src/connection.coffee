@@ -1,4 +1,3 @@
-dns            = require 'dns'
 _              = require 'lodash'
 url            = require 'url'
 
@@ -11,8 +10,8 @@ class Connection
     @_options = options
     @_subscriptions = []
 
-    {socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient} = options
-    @_socket = @_buildSocket {socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient}
+    {socket, protocol, hostname, port, service, domain, secure, resolveSrv} = options
+    @_socket = @_buildSocket {socket, protocol, hostname, port, service, domain, secure, resolveSrv}
     @_socket.on 'identify', @_onIdentify
     @_socket.on 'ready', @_onReady
 
@@ -20,13 +19,12 @@ class Connection
     @_socket.connect(callback)
 
   identify: =>
-    @_socket.send 'identity', {
-      uuid:  @_options.uuid
-      token: @_options.token
-      auto_set_online: @_options.auto_set_online
-    }
+    {uuid, token, auto_set_online} = @_options
+    @_socket.send 'identity', {uuid, token, auto_set_online}
 
-  resetToken: =>
+  resetToken: (data) =>
+    data = @_uuidOrObject data
+    @_socket.send 'resetToken', data
 
   subscribe: (data) =>
     data = @_uuidOrObject data
@@ -50,20 +48,20 @@ class Connection
     throw new Error('resolveSrv is set to true, but received hostname') if hostname?
     throw new Error('resolveSrv is set to true, but received port')     if port?
 
-  _buildSocket: ({socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient}) =>
+  _buildSocket: ({socket, protocol, hostname, port, service, domain, secure, resolveSrv}) =>
     return socket if socket?
 
-    return @_buildSrvSocket({protocol, hostname, port, service, domain, secure, socketIoClient}) if resolveSrv
-    return @_buildUrlSocket({protocol, hostname, port, service, domain, secure, socketIoClient})
+    return @_buildSrvSocket({protocol, hostname, port, service, domain, secure}) if resolveSrv
+    return @_buildUrlSocket({protocol, hostname, port, service, domain, secure})
 
-  _buildSrvSocket: ({protocol, hostname, port, service, domain, secure, socketIoClient}) =>
+  _buildSrvSocket: ({protocol, hostname, port, service, domain, secure}) =>
     @_assertNoUrl({protocol, hostname, port})
     service ?= 'meshblu'
     domain ?= 'octoblu.com'
     secure ?= true
     return new @_BufferedSocket {resolveSrv: true, service, domain, secure}
 
-  _buildUrlSocket: ({protocol, hostname, port, service, domain, secure, socketIoClient}) =>
+  _buildUrlSocket: ({protocol, hostname, port, service, domain, secure}) =>
     @_assertNoSrv({service, domain, secure})
     protocol ?= 'https'
     hostname ?= 'meshblu.octoblu.com'
