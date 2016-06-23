@@ -23,6 +23,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
   * [conn.message(message)](#connmessagemessage)
   * [conn.register(params, callback)](#connregisterparams-callback)
+  * [conn.resetToken(query, callback)](#connresettokenauth-callback)
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
   * [conn.unregister(query, callback)](#connunregisterquery-callback)
@@ -481,6 +482,37 @@ conn.register({color: 'black', version: '2.0.0'}, function(device){
   //     "version": "2.0.0",
   //     "createdAt": "2016-05-20T22:10:23+00:00",
   //     "hash": "kt8lmSb5r6ruHG41jqZZHp1CEQvzM1iMJ/kAUppryZo="
+  //   }
+  // }
+});
+```
+
+## conn.resetToken(query, callback)
+
+Reset the root token of a device. This will revoke the existing root token,
+generate a new one, and yield the generated token in the callback.
+
+##### Arguments
+
+* `query` Query object, must contain only the `uuid` property.
+  * `uuid` UUID of the device to whose root token to reset
+* `callback` Function that is called after the token has been revoked.
+  * `response` Response object that wraps `device`
+    * `device` The Meshblu device for which the token was reset. Contains only the `uuid` and `token` properties. Make sure to save the new `token`, it will not be made available again as it is not stored in plain-text anywhere by Meshblu.
+
+##### Example
+
+To reset a token for a device:
+
+```javascript
+conn.resetToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'}, function(response){
+  console.log('resetToken');
+  console.log(JSON.stringify(device, null, 2));
+  // resetToken
+  // {
+  //   "device": {
+  //     "uuid": "2f9556ff-1084-4d4c-b131-5d3de42eff68",
+  //     "token": "cc2f1fba8ffd7a46f4f414daf1011c2053e9a466"
   //   }
   // }
 });
