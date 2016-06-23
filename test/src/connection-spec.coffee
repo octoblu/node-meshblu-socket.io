@@ -157,11 +157,11 @@ describe 'Connection', ->
 
     describe 'when resetToken is called with a uuid and a callback', ->
       beforeEach ->
-        @sut.socket.emit = sinon.spy @sut.socket.emit
-      it 'emit resetToken with the uuid', ->
-        @callback = =>
+        @callback = ->
         @sut.resetToken 'uuid4', @callback
-        expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
+
+      it 'emit resetToken with the uuid', ->
+        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
 
     describe 'encryptMessage', ->
       beforeEach ->

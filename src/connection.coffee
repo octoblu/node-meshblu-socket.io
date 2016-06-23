@@ -22,9 +22,9 @@ class Connection
     {uuid, token, auto_set_online} = @_options
     @_socket.send 'identity', {uuid, token, auto_set_online}
 
-  resetToken: (data) =>
+  resetToken: (data, callback) =>
     data = @_uuidOrObject data
-    @_socket.send 'resetToken', data
+    @_socket.send 'resetToken', data, callback
 
   subscribe: (data) =>
     data = @_uuidOrObject data
