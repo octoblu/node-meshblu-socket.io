@@ -1,5 +1,6 @@
 {beforeEach, describe, it} = global
 {expect} = require 'chai'
+sinon = require 'sinon'
 
 {EventEmitter} = require 'events'
 BufferedSocket = require '../../src/buffered-socket'
@@ -73,3 +74,24 @@ describe 'BufferedSocket', ->
 
         it 'should call request with the formatted url', ->
           expect(@socketIoClient).to.have.been.calledWith 'wss://thug.biz:123'
+
+    describe 'when constructed socketIO options', ->
+      beforeEach ->
+        @socket = new EventEmitter
+        @socketIoClient = sinon.spy(=> @socket)
+
+        options = resolveSrv: false, protocol: 'wss', hostname: 'thug.biz', port: 123, socketIoOptions: {some_option: true}
+        dependencies = {@socketIoClient}
+
+        @sut = new BufferedSocket options, dependencies
+
+      describe 'when connect is called', ->
+        beforeEach 'making the request', (done) ->
+          @sut.connect done
+          @socket.emit 'connect'
+
+        it 'should call request with the formatted url', ->
+          expect(@socketIoClient).to.have.been.calledWith 'wss://thug.biz:123', {
+            some_option: true
+            forceNew: true
+          }

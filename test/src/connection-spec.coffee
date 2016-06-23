@@ -2,23 +2,26 @@
 {expect} = require 'chai'
 sinon    = require 'sinon'
 
-{EventEmitter} = require 'events'
-fs             = require 'fs'
-_              = require 'lodash'
-NodeRSA        = require 'node-rsa'
-path           = require 'path'
+{EventEmitter}  = require 'events'
+fs              = require 'fs'
+stableStringify = require 'json-stable-stringify'
+_               = require 'lodash'
+NodeRSA         = require 'node-rsa'
+path            = require 'path'
 
-Connection     = require '../../'
+PRIVATE_KEY = fs.readFileSync(path.join(__dirname, '../fixtures/private.key')).toString()
+PUBLIC_KEY  = fs.readFileSync(path.join(__dirname, '../fixtures/public.key')).toString()
+Connection = require '../../'
 
 
 describe 'Connection', ->
   beforeEach 'construct fake buffered socket', ->
     @socket = new EventEmitter
     @socket.connect = sinon.stub()
-    @socket.send    = sinon.spy()
+    @socket.send    = sinon.stub()
     @BufferedSocket = sinon.spy => @socket
 
-  describe '-> constructor', ->
+  describe '->constructor', ->
     describe 'when constructed with !resolveSrv and a domain', ->
       it 'should throw an exception', ->
         construction = => new Connection resolveSrv: false, domain: 'foo.com'
@@ -50,20 +53,21 @@ describe 'Connection', ->
         expect(construction).to.throw 'resolveSrv is set to true, but received port'
 
     describe 'when constructed with !resolveSrv and no url params', ->
-      it 'should throw an exception', ->
+      it 'construct the BufferedSocket with the url params', ->
         BufferedSocket = sinon.spy(=> new EventEmitter)
         new Connection resolveSrv: false, auth: {}, {BufferedSocket: BufferedSocket}
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
           resolveSrv: false
-          protocol: 'https'
-          hostname: 'meshblu.octoblu.com'
+          protocol: 'wss'
+          hostname: 'meshblu-socket-io.octoblu.com'
           port: 443
+          options: undefined
         }
 
     describe 'when constructed with resolveSrv and no srv params', ->
-      it 'should throw an exception', ->
+      it 'construct the BufferedSocket with the srv params', ->
         BufferedSocket = sinon.spy(=> new EventEmitter)
         new Connection resolveSrv: true, auth: {}, {BufferedSocket: BufferedSocket}
 
@@ -73,410 +77,285 @@ describe 'Connection', ->
           service: 'meshblu'
           domain: 'octoblu.com'
           secure: true
+          options: undefined
         }
 
-  describe 'when we pass in a fake socket.io', ->
+    describe 'when constructed with socketio options', ->
+      it 'construct the BufferedSocket with the srv params, and the options', ->
+        BufferedSocket = sinon.spy(=> new EventEmitter)
+        new Connection options: {forceNew: true}, {BufferedSocket: BufferedSocket}
+
+        expect(BufferedSocket).to.have.been.calledWithNew
+        expect(BufferedSocket).to.have.been.calledWith {
+          protocol: 'wss'
+          hostname: 'meshblu-socket-io.octoblu.com'
+          port: 443
+          resolveSrv: false
+          options:
+            forceNew: true
+        }
+
+  describe 'when constructed with a fake BufferedSocket constructor', ->
     beforeEach ->
       @console = error: sinon.spy()
-      @sut = new Connection uuid: 'cats', token: 'dogs', auto_set_online: true, {
+      @sut = new Connection uuid: 'cats', token: 'dogs', auto_set_online: true, privateKey: PRIVATE_KEY, {
         BufferedSocket: @BufferedSocket
         console: @console
       }
 
-    it 'should instantiate', ->
-      expect(@sut).to.exist
-
-    describe 'when connected', ->
-      beforeEach (done) ->
-        @sut.connect done
-        @socket.connect.yield null
-        @socket.emit 'connect'
-
-      it 'should send identity with the uuid and token on identify', ->
-        @socket.emit 'identify'
-        expect(@socket.send).to.have.been.calledWith 'identity', {
-          uuid: 'cats'
-          token: 'dogs'
-          auto_set_online: true
-        }
-
-    describe 'when connect, then ready', ->
-      beforeEach (done) ->
-        @sut.connect done
-        @socket.connect.yield null
-        @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
-
-      describe 'when subscribe is called', ->
-        beforeEach ->
-          @sut.subscribe uuid: 'this'
-
-        it 'should subscribe to the "this"', ->
-          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'this'
-
-      describe 'when subscribed to foo and the socket reconnects', ->
-        beforeEach ->
-          @sut.subscribe uuid: 'foo'
-          @socket.send.reset()
-          @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
-
-        it 'should re-subscribe to the "foo"', ->
-          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'foo'
-
-      describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
+    describe 'dealing with readiness', ->
+      describe 'when connected', ->
         beforeEach (done) ->
-          @sut.subscribe uuid: 'foo'
-          @sut.unsubscribe uuid: 'foo'
-          @socket.send.reset()
+          @sut.connect done
+          @socket.connect.yield null
+          @socket.emit 'connect'
 
+        it 'should send identity with the uuid and token on identify', ->
+          @socket.emit 'identify'
+          expect(@socket.send).to.have.been.calledWith 'identity', {
+            uuid: 'cats'
+            token: 'dogs'
+            auto_set_online: true
+          }
+
+      describe 'when connect, then ready', ->
+        beforeEach (done) ->
+          @sut.connect done
+          @socket.connect.yield null
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
-          _.delay done, 100
 
-        it 'should not re-subscribe to "foo"', ->
-          expect(@socket.send).not.to.have.been.called
+        describe 'when subscribe is called', ->
+          beforeEach ->
+            @sut.subscribe uuid: 'this'
 
-    describe 'when resetToken is called with a uuid', ->
+          it 'should subscribe to the "this"', ->
+            expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'this'
+
+        describe 'when subscribed to foo and the socket reconnects', ->
+          beforeEach ->
+            @sut.subscribe uuid: 'foo'
+            @socket.send.reset()
+            @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+
+          it 'should re-subscribe to the "foo"', ->
+            expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'foo'
+
+        describe 'when subscribed to foo, unsubscribed, and the socket reconnects', ->
+          beforeEach (done) ->
+            @sut.subscribe uuid: 'foo'
+            @sut.unsubscribe uuid: 'foo'
+            @socket.send.reset()
+
+            @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
+            _.delay done, 100
+
+          it 'should not re-subscribe to "foo"', ->
+            expect(@socket.send).not.to.have.been.called
+
+    describe '->generateKeyPair', ->
       beforeEach ->
-        @sut.resetToken 'uuid'
+        {@privateKey, @publicKey} = @sut.generateKeyPair(8)
 
-      it 'should send resetToken with the uuid', ->
-        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid'
+      it 'should generate a valid public key', ->
+        publicKey = new NodeRSA @publicKey
+        expect(publicKey.isPublic()).to.be.true
 
-    describe 'when resetToken is called with a different uuid', ->
-      beforeEach ->
-        @sut.resetToken 'uuid2'
+      it 'should generate a private key', ->
+        privateKey = new NodeRSA @privateKey
+        expect(privateKey.isPrivate()).not.to.be.false # isPrivate returns false or a BigInt() if true
 
-      it 'emit resetToken with the uuid', ->
-        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid2'
-
-    describe 'when resetToken is called with an object containing a uuid', ->
-      beforeEach ->
-        @sut.resetToken uuid: 'uuid3'
-
-      it 'emit resetToken with the uuid', ->
-        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid3'
-
-    describe 'when resetToken is called with a uuid and a callback', ->
-      beforeEach ->
-        @callback = ->
-        @sut.resetToken 'uuid4', @callback
-
-      it 'emit resetToken with the uuid', ->
-        expect(@socket.send).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
-
-    describe 'encryptMessage', ->
+    describe '->encryptMessage', ->
       beforeEach ->
         @sut.getPublicKey = sinon.stub()
 
-      describe 'when encryptMessage is called with a device of uuid 1', ->
-        it 'should call getPublicKey', ->
-          @sut.encryptMessage 1
-          expect(@sut.getPublicKey).to.have.been.called
-
-        it 'should call getPublicKey with the uuid of the target device 1', ->
-          @sut.encryptMessage 1
-          expect(@sut.getPublicKey).to.have.been.calledWith 1
-
-        describe 'when getPublicKey returns with a public key', ->
-          beforeEach ->
-            @sut.message = sinon.stub()
-            @publicKey = {encrypt: sinon.stub().returns('54321')}
-            @sut.getPublicKey.yields null, @publicKey
-
-          it 'should call encrypt on the response from getPublicKey', ->
-            @sut.encryptMessage 1, hello : 'world'
-            expect(@publicKey.encrypt).to.have.been.calledWith JSON.stringify(hello : 'world')
-
-          describe 'when publicKey.encrypt returns with a buffer of "12345"', ->
-            beforeEach ->
-              @publicKey.encrypt.returns new Buffer '12345',
-
-            it 'should call message with an encrypted payload', ->
-              @sut.encryptMessage 1, hello : 'world'
-              expect(@sut.message).to.have.been.calledWith 1, null, encryptedPayload: 'MTIzNDU='
-
-        describe 'when getPublicKey returns with an error', ->
-          beforeEach ->
-            @sut.getPublicKey.yields true, null
-
-          it 'should call console.error and report the error', ->
-            @sut.encryptMessage 1, { hello : 'world' }
-            expect(@console.error).to.have.been.calledWith 'can\'t find public key for device'
-
-      describe 'when encryptMessage is called with a different uuid', ->
-        it 'should call getPublicKey with the uuid of the target device', ->
-          @sut.encryptMessage 2
-          expect(@sut.getPublicKey).to.have.been.calledWith 2
-
-      describe 'when encryptMessage is called with options', ->
+      describe 'when getPublicKey yields a public key', ->
         beforeEach ->
-          @uuid = '54063a2f-fcfb-4f97-8438-f8b0b0c635ad'
-          @callback = =>
-          @options = payload: 'plain-text'
+          @socket.send.withArgs('getPublicKey', '123').yields null, PUBLIC_KEY
 
-          @publicKey = {encrypt: sinon.stub().returns('54321')}
-          @sut.getPublicKey.yields null, @publicKey
-          @sut.message = sinon.stub()
-          @sut.encryptMessage @uuid, 'encrypt-this', @options, @callback
+        describe 'when encryptMessage is called with a device of uuid "123"', ->
+          beforeEach ->
+            @sut.encryptMessage '123', hello: 'world'
 
-        it 'should call message with the options ', ->
-          expectedOptions = {payload: 'plain-text', encryptedPayload: '54321'}
-          expect(@sut.message).to.have.been.calledWith @uuid, null, expectedOptions, @callback
+          it 'should use the key to encrypted and send a message', ->
+            @messageCall = @socket.send.withArgs 'message'
+            [event, message] = @messageCall.firstCall.args
+            decryptedPayload = JSON.parse new NodeRSA(PRIVATE_KEY).decrypt(message.encryptedPayload).toString()
 
-    describe 'sign', ->
-      beforeEach ->
-        @sut.privateKey =  sign: sinon.stub()
-        @sut.privateKey.sign.returns new Buffer( 'cafe', 'base64')
+            expect(@messageCall).to.have.been.calledOnce
+            expect(event).to.deep.equal 'message'
+            expect(decryptedPayload).to.deep.equal hello: 'world'
 
-      it 'should exist', ->
-        expect(@sut.sign).to.exist
+      describe 'when getPublicKey yields an error', ->
+        beforeEach ->
+          @socket.send.withArgs('getPublicKey', '123').yields new Error('uh oh')
+          @sut.encryptMessage '123', hello: 'world'
 
+        it 'should call console.error and report the error', ->
+          expect(@console.error).to.have.been.calledWith "can't find public key for device"
+
+      describe 'when encryptMessage is called with options and a callback', ->
+        beforeEach ->
+          @socket.send.withArgs('getPublicKey', '1234').yields null, PUBLIC_KEY
+          @callback = ->
+          @sut.encryptMessage '1234', 'encrypt-this', payload: 'plain-text', @callback
+
+        it 'should call message with the options and callback', ->
+          @messageCall = @socket.send.withArgs 'message'
+          [event, message, callback] = @messageCall.firstCall.args
+          decryptedPayload = JSON.parse new NodeRSA(PRIVATE_KEY).decrypt(message.encryptedPayload).toString()
+
+          expect(@messageCall).to.have.been.calledOnce
+          expect(event).to.deep.equal 'message'
+          expect(decryptedPayload).to.deep.equal 'encrypt-this'
+          expect(message.payload).to.deep.equal 'plain-text'
+          expect(callback).to.equal @callback
+
+      describe 'when encryptMessage is called with no options, but still a callback', ->
+        beforeEach ->
+          @socket.send.withArgs('getPublicKey', '1234').yields null, PUBLIC_KEY
+          @callback = ->
+          @sut.encryptMessage '1234', 'encrypt-this', @callback
+
+        it 'should call message with the callback ', ->
+          @messageCall = @socket.send.withArgs 'message'
+          [event, message, callback] = @messageCall.firstCall.args
+          decryptedPayload = JSON.parse new NodeRSA(PRIVATE_KEY).decrypt(message.encryptedPayload).toString()
+
+          expect(@messageCall).to.have.been.calledOnce
+          expect(event).to.deep.equal 'message'
+          expect(decryptedPayload).to.deep.equal 'encrypt-this'
+          expect(callback).to.equal @callback
+
+    describe '->message', ->
+      describe 'when message is called the old way, with one big object', ->
+        beforeEach ->
+          @callback = sinon.spy()
+          @sut.message {devices: ['456'], payload: {hello: 'world'}}, @callback
+
+        it 'should call send "message" with an object a devices and payload property', ->
+          expectedMessage = {devices: ['456'], payload: {hello: 'world'}}
+          expect(@socket.send).to.have.been.calledWith 'message', expectedMessage, @callback
+
+    describe '->resetToken', ->
+      describe 'when resetToken is called with a uuid', ->
+        beforeEach ->
+          @sut.resetToken 'uuid'
+
+        it 'should send resetToken with the uuid', ->
+          expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid'
+
+      describe 'when resetToken is called with a different uuid', ->
+        beforeEach ->
+          @sut.resetToken 'uuid2'
+
+        it 'emit resetToken with the uuid', ->
+          expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid2'
+
+      describe 'when resetToken is called with an object containing a uuid', ->
+        beforeEach ->
+          @sut.resetToken uuid: 'uuid3'
+
+        it 'emit resetToken with the uuid', ->
+          expect(@socket.send).to.have.been.calledWith 'resetToken', uuid: 'uuid3'
+
+      describe 'when resetToken is called with a uuid and a callback', ->
+        beforeEach ->
+          @callback = ->
+          @sut.resetToken 'uuid4', @callback
+
+        it 'emit resetToken with the uuid', ->
+          expect(@socket.send).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
+
+    describe '->sign', ->
       describe 'when it is called with a string', ->
-        it 'should call NodeRSA#sign', ->
-          @sut.sign 'doesntmatter'
-          expect(@sut.privateKey.sign).to.have.been.calledWith '"doesntmatter"'
-
-      describe 'when it is called with a different string', ->
-        it 'should call NodeRSA#sign', ->
-          @sut.sign 'matters,doesnt'
-          expect(@sut.privateKey.sign).to.have.been.calledWith '"matters,doesnt"'
+        it 'should sign', ->
+          signature = @sut.sign 'doesntmatter'
+          verification = new NodeRSA(PUBLIC_KEY).verify stableStringify('doesntmatter'), signature, 'utf8', 'base64'
+          expect(verification).to.be.true
 
       describe 'when it is called with an object', ->
-        it 'should call privateKey.sign with a string version of that data', ->
-          @objToSign = hair: 'blue', eyes: 'brown'
-          @sut.sign @objToSign
-          expect(@sut.privateKey.sign).to.have.been.calledWith '{"eyes":"brown","hair":"blue"}'
+        it 'should sign a stable string version of that data', ->
+          signature = @sut.sign hair: 'blue', eyes: 'brown'
+          dataStr = stableStringify(hair: 'blue', eyes: 'brown')
+          verification = new NodeRSA(PUBLIC_KEY).verify dataStr, signature, 'utf8', 'base64'
+          expect(verification).to.be.true
 
-      describe 'when privateKey.sign returns a buffer', ->
-        it 'should return the base64-encoded version of that buffer', ->
-          @sut.privateKey.sign.returns new Buffer( 'deadbeef', 'base64')
-          expect( @sut.sign 'whatever' ).to.equal 'deadbeef'
+    describe '->subscribe', ->
+      describe 'when called with a uuid', ->
+        beforeEach ->
+          @sut.subscribe 'kozunfez'
 
-      describe 'when privateKey.sign returns a different buffer', ->
-        it 'should return the base64-encoded version of that buffer', ->
-          @sut.privateKey.sign.returns new Buffer( 'decafec0ffee', 'base64')
-          expect( @sut.sign 'whatever' ).to.equal 'decafec0ffee'
+        it 'should send subscribe with the uuid wrapped in an object', ->
+          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'kozunfez'
 
-    describe 'verify', ->
-      beforeEach ->
-        @sut.privateKey =  verify: sinon.stub()
-      it 'should exist', ->
-        expect(@sut.verify).to.exist
+      describe 'when called with an object', ->
+        beforeEach ->
+          @sut.subscribe uuid: 'upa'
 
-      describe 'when it is called with data and a signature', ->
-        it 'should call NodeRSA#verify', ->
-          @sut.verify 'somedata', 'af0d1'
-          expect(@sut.privateKey.verify).to.have.been.calledWith '"somedata"' ,'af0d1', 'utf8', 'base64'
+        it 'should send subscribe with the uuid wrapped in an object', ->
+          expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'upa'
 
-      describe 'when it is called with data and a signature', ->
-        it 'should call NodeRSA#verify', ->
-          @sut.verify 'moardata', 'b0fd3'
-          expect(@sut.privateKey.verify).to.have.been.calledWith '"moardata"' ,'b0fd3', 'utf8', 'base64'
+    describe '->unsubscribe', ->
+      describe 'when called with a uuid', ->
+        beforeEach ->
+          @sut.unsubscribe 'kozunfez'
 
-      describe 'when publicKey.verify returns true', ->
+        it 'should send unsubscribe with the uuid wrapped in an object', ->
+          expect(@socket.send).to.have.been.calledWith 'unsubscribe', uuid: 'kozunfez'
+
+      describe 'when called with an object', ->
+        beforeEach ->
+          @sut.unsubscribe uuid: 'upa'
+
+        it 'should send unsubscribe with the uuid wrapped in an object', ->
+          expect(@socket.send).to.have.been.calledWith 'unsubscribe', uuid: 'upa'
+
+    describe '->verify', ->
+      describe 'when it is called with data and a valid signature', ->
         it 'should return true', ->
-          @sut.privateKey.verify.returns true
-          expect(@sut.verify()).to.be.true
+          signature = new NodeRSA(PRIVATE_KEY).sign stableStringify('foo'), 'base64'
+          expect(@sut.verify 'foo', signature).to.be.true
 
-      describe 'when publicKey.verify returns false', ->
-        it 'should return false', ->
-          @sut.privateKey.verify.returns false
-          expect(@sut.verify()).to.be.false
+      describe 'when it is called with data and an invalid signature', ->
+        it 'should call NodeRSA#verify', ->
+          expect(@sut.verify 'foo', 'definitely-forged').to.be.false
 
-    describe 'getPublicKey', ->
-      it 'should exist', ->
-        expect(@sut.getPublicKey).to.exist
+    describe 'on "config"', ->
+      describe 'when we receive a config event', ->
+        beforeEach (done) ->
+          @sut.once 'config', (@config) => done()
+          @socket.emit 'config', za: 'lulivop'
 
-      describe 'when called', ->
-        beforeEach () ->
-          @sut.socket.emit = sinon.stub()
-          @callback = sinon.spy()
+        it 'should re-emit it on "config"', ->
+          expect(@config).to.deep.equal za: 'lulivop'
 
-        it 'should call device on itself with the uuid of the device we are getting the key for', ->
-          @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-          expect(@sut.socket.emit).to.have.been.calledWith 'getPublicKey', 'c9707ff2-b3e7-4363-b164-90f5753dac68'
+    describe 'on "message"', ->
+      describe 'when we receive a message with an "encryptedPayload" property', ->
+        beforeEach (done) ->
+          @sut.once 'message', (@message) => done()
 
-        describe 'when called with a different uuid', ->
-          it 'should call device with the different uuid', ->
-            @sut.getPublicKey '4df5ee81-8f60-437d-8c19-2375df745b70', @callback
-            expect(@sut.socket.emit).to.have.been.calledWith 'getPublicKey', '4df5ee81-8f60-437d-8c19-2375df745b70'
+          encryptedPayload = new NodeRSA(PUBLIC_KEY).encrypt stableStringify('foo'), 'base64'
+          @socket.emit 'message', {encryptedPayload}
 
-          describe 'when device returns an invalid device', ->
-            beforeEach ->
-              @sut.socket.emit.yields new Error('you suck'), null
-
-            it 'should call the callback with an error', ->
-              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-              error = @callback.args[0][0]
-              expect(error).to.exist
-
-          describe 'when device returns a valid device without a public key', ->
-            beforeEach ->
-              @sut.socket.emit.yields null, null
-
-            it 'should call the callback with an error', ->
-              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-              error = @callback.args[0][0]
-              expect(error).to.exist
-
-          describe 'when device returns a valid device with a public key', ->
-            beforeEach ->
-              @publicKey = fs.readFileSync path.join(__dirname, 'public.key')
-              @privateKey = new NodeRSA fs.readFileSync path.join(__dirname, 'private.key')
-              @sut.socket.emit.yields null, @publicKey
-
-            it 'should call the callback without an error', ->
-              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-              error = @callback.args[0][0]
-              expect(error).to.not.exist
-
-            it 'should only call the callback once', ->
-              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-              expect(@callback.calledOnce).to.be.true
-
-            it 'should return an object with a method encrypt', ->
-              @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-              key = @callback.args[0][1]
-              expect(key.encrypt).to.exist
-
-            describe 'when encrypt is called with a message on the returned key', ->
-              beforeEach ->
-                @sut.getPublicKey 'c9707ff2-b3e7-4363-b164-90f5753dac68', @callback
-                key = @callback.args[0][1]
-                @encryptedMessage = key.encrypt('hi').toString 'base64'
-
-              it 'should be able to decrypt the result with the private key', ->
-                decryptedMessage = @privateKey.decrypt(@encryptedMessage).toString()
-                expect(decryptedMessage).to.equal 'hi'
-
-      describe 'generateKeyPair', ->
-        beforeEach ->
-          class FakeNodeRSA
-            generateKeyPair: sinon.spy()
-            exportKey: (arg) => {public: 'the-public', private: 'the-private'}[arg]
-
-          @nodeRSA = new FakeNodeRSA()
-
-          @sut = new Connection {}, {
-            socketIoClient: -> new EventEmitter(),
-            console: @console
-            NodeRSA: => @nodeRSA
-          }
-          @result = @sut.generateKeyPair()
-
-        it 'should have called generateKeyPair on an instance of nodeRSA', ->
-          expect(@nodeRSA.generateKeyPair).to.have.been.called
-
-        it 'should generate a public key', ->
-          expect(@result.publicKey).to.equal 'the-public'
-
-        it 'should generate a private key', ->
-          expect(@result.privateKey).to.equal 'the-private'
-
-    describe 'when we create a connection with a private key', ->
-      beforeEach ->
-        @console = error: sinon.spy()
-        @privateKey = fs.readFileSync path.join(__dirname, 'private.key')
-        @sut = new Connection( { privateKey: @privateKey }, {
-          socketIoClient: -> new EventEmitter(),
-          console: @console
-        })
-
-
-      it 'should create a private key property on itself', ->
-        expect(@sut.privateKey).to.exist;
-
-      it 'should have a private key property that is based on the key passed in', ->
-        expect(@sut.privateKey.exportKey('private')).to.equal @privateKey
-
-      describe 'when we get a message with an "encryptedPayload" property', ->
-        beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub().returns null
-
-        it 'should decrypt the encryptedPayload', ->
-          @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
-          expect(@sut.privateKey.decrypt).to.be.calledWith 'hello!'
+        it 'should emit the decrypted payload under the encryptedPayload key', ->
+          expect(@message.encryptedPayload).to.deep.equal 'foo'
 
       describe 'when we get a message with a different value for "encryptedPayload"', ->
-        beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub().returns null
+        beforeEach (done) ->
+          @sut.once 'message', (@message) => done()
 
-        it 'should decrypt that encryptedPayload', ->
-          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
-          expect(@sut.privateKey.decrypt).to.be.calledWith 'world!'
+          encryptedPayload = new NodeRSA(PUBLIC_KEY).encrypt stableStringify('world!'), 'base64'
+          @socket.emit 'message', {encryptedPayload}
 
-      describe 'when the privatekey decrypts the payload', ->
-        beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub().returns 5
-          sinon.stub @sut, 'emit'
-
-        it 'should assign the decrypted payload to the message before emitting it', ->
-          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
-          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: 5, encryptedPayload: 'world!' )
-
-      describe 'when the privatekey decrypts a different encryptedPayload', ->
-        beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub().returns 10
-          sinon.stub @sut, 'emit'
-
-        it 'should assign the decrypted payload to the message before emitting it', ->
-          @sut._handleAckRequest 'message', encryptedPayload: 'hello!'
-          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: 10, encryptedPayload: 'hello!' )
+        it 'should emit the decrypted payload under the encryptedPayload key', ->
+          expect(@message.encryptedPayload).to.deep.equal 'world!'
 
       describe 'when the encrypted payload is a json object', ->
-        beforeEach ->
-          @sut.privateKey.decrypt = sinon.stub().returns '{"foo": "bar"}'
-          sinon.stub @sut, 'emit'
+        beforeEach (done) ->
+          @sut.once 'message', (@message) => done()
 
-        it 'should parse the json', ->
-          @sut._handleAckRequest 'message', encryptedPayload: 'world!'
-          expect(@sut.emit.args[0][1]).to.deep.equal( decryptedPayload: {"foo": "bar"}, encryptedPayload: 'world!' )
+          encryptedPayload = new NodeRSA(PUBLIC_KEY).encrypt stableStringify(foo: 'bar'), 'base64'
+          @socket.emit 'message', {encryptedPayload}
 
-    describe 'message', ->
-      beforeEach ->
-        @sut._emitWithAck = sinon.stub()
-
-      describe 'when message is called with a uuid and a message body', ->
-        it 'should call emitWithAck with an object with a devices and payload property', ->
-          @object = {}
-          @sut.message 1, @object
-          messageObject = @sut._emitWithAck.args[0][1]
-          expect(messageObject).to.deep.equal {devices: 1, payload: @object}
-
-      describe 'when message is called with a different uuid and message body', ->
-        it 'should call emitWithAck with an object with that uuid and payload', ->
-          @object = hello: 'world'
-          @sut.message 2, @object
-          messageObject = @sut._emitWithAck.args[0][1]
-          expect(messageObject).to.deep.equal {devices: 2, payload: @object}
-
-      describe 'when message is called with a callback', ->
-        it 'should call emitWithAck with a callback', ->
-          @callback = sinon.spy()
-          @object = {}
-          @sut.message 1, @object, @callback
-          passedCallback = @sut._emitWithAck.args[0][2]
-          expect(passedCallback).to.equal @callback
-
-      describe 'when message is called the old way, with one big object', ->
-        it 'should call _emitWithAck with the entire object and a callback', ->
-          callback = sinon.spy()
-          message = {devices: [ 1 ], payload: { hello: 'world' }}
-          @sut.message message, callback
-
-          expect(@sut._emitWithAck).to.have.been.calledWith 'message', message, callback
-
-      describe 'when message is called with options', ->
-        it 'should call _emitWithAck with an object with the options in it', ->
-          callback = sinon.spy()
-          message = cats: true
-          options = hello: 'world'
-          messageObject = {
-            devices: [1],
-            payload:
-              cats: true,
-            hello: 'world'
-          }
-          @sut.message [1], message, options, callback
-
-          emitArgs = @sut._emitWithAck.args[0]
-          expect(emitArgs[1]).to.deep.equal messageObject
+        it 'should emit the decrypted payload under the encryptedPayload key', ->
+          expect(@message.encryptedPayload).to.deep.equal foo: 'bar'

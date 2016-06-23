@@ -11,14 +11,15 @@ class BufferedSocket extends EventEmitter
     @_socketIoClient = dependencies.socketIoClient ? socketIoClient
     @_dns = dependencies.dns ? dns
     @_options = options
+    @_socketIoOptions = _.defaults options.socketIoOptions, {forceNew: true}
 
     @_emitStack = []
-    @_throttledProcessEmitStack = _.throttle @_processEmitStack, (bufferRate ? DEFAULT_BUFFER_RATE)
+    @_throttledProcessEmitStack = _.throttle @_processEmitStack, (@_options.bufferRate ? DEFAULT_BUFFER_RATE)
 
   connect: (callback) =>
     @_resolveUri (error, uri) =>
       return callback error if error?
-      @_socket = @_socketIoClient(uri)
+      @_socket = @_socketIoClient(uri, @_socketIoOptions)
       @_socket.once 'connect', => callback()
       @_socket.on 'identify',  => @emit 'identify', arguments
       @_socket.on 'ready',     => @emit 'ready', arguments
