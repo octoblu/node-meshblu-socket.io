@@ -1,27 +1,23 @@
 dns            = require 'dns'
 _              = require 'lodash'
-socketIoClient = require 'socket.io-client'
 url            = require 'url'
 
 BufferedSocket = require './buffered-socket'
 
 class Connection
   constructor: (options, dependencies={}) ->
-    @_dns             = dependencies.dns
-    @_dns            ?= dns
-    @_socketIoClient  = dependencies.socketIoClient
-    @_socketIoClient ?= socketIoClient
+    @_BufferedSocket = dependencies.BufferedSocket ? BufferedSocket
 
     @_options = options
     @_subscriptions = []
 
+    {socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient} = options
+    @_socket = @_buildSocket {socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient}
+    @_socket.on 'identify', @_onIdentify
+    @_socket.on 'ready', @_onReady
+
   connect: (callback) =>
-    @_resolveUri (error, uri) =>
-      console.log '_resolveUri', error, uri
-      @_socket = new BufferedSocket {uri, socketIoClient: @_socketIoClient}
-      @_socket.on 'identify', @_onIdentify
-      @_socket.on 'ready', @_onReady
-      @_socket.connect(callback)
+    @_socket.connect(callback)
 
   identify: =>
     @_socket.send 'identity', {
@@ -43,6 +39,37 @@ class Connection
     @subscriptions = _.reject @subscriptions, data
 
     @_socket.send 'unsubscribe', data
+
+  _assertNoSrv: ({service, domain, secure}) =>
+    throw new Error('resolveSrv is set to false, but received domain')  if domain?
+    throw new Error('resolveSrv is set to false, but received service') if service?
+    throw new Error('resolveSrv is set to false, but received secure')  if secure?
+
+  _assertNoUrl: ({protocol, hostname, port}) =>
+    throw new Error('resolveSrv is set to true, but received protocol') if protocol?
+    throw new Error('resolveSrv is set to true, but received hostname') if hostname?
+    throw new Error('resolveSrv is set to true, but received port')     if port?
+
+  _buildSocket: ({socket, protocol, hostname, port, service, domain, secure, resolveSrv, socketIoClient}) =>
+    return socket if socket?
+
+    return @_buildSrvSocket({protocol, hostname, port, service, domain, secure, socketIoClient}) if resolveSrv
+    return @_buildUrlSocket({protocol, hostname, port, service, domain, secure, socketIoClient})
+
+  _buildSrvSocket: ({protocol, hostname, port, service, domain, secure, socketIoClient}) =>
+    @_assertNoUrl({protocol, hostname, port})
+    service ?= 'meshblu'
+    domain ?= 'octoblu.com'
+    secure ?= true
+    return new @_BufferedSocket {resolveSrv: true, service, domain, secure}
+
+  _buildUrlSocket: ({protocol, hostname, port, service, domain, secure, socketIoClient}) =>
+    @_assertNoSrv({service, domain, secure})
+    protocol ?= 'https'
+    hostname ?= 'meshblu.octoblu.com'
+    port     ?= 443
+    try port = parseInt port
+    return new @_BufferedSocket {resolveSrv: false, protocol, hostname, port}
 
   _onIdentify: => @identify()
 

@@ -1,34 +1,72 @@
+dns            = require 'dns'
 {EventEmitter} = require 'events'
 _              = require 'lodash'
+socketIoClient = require 'socket.io-client'
+url            = require 'url'
 
 DEFAULT_BUFFER_RATE = 100
 
 class BufferedSocket extends EventEmitter
-  constructor: ({socketIoClient, uri, bufferRate}) ->
-    throw new Error('Missing required argument: socketIoClient') unless socketIoClient?
-    throw new Error('Missing required argument: uri') unless uri?
+  constructor: (options, dependencies={}) ->
+    @_socketIoClient = dependencies.socketIoClient ? socketIoClient
+    @_dns = dependencies.dns ? dns
+    @_options = options
 
     @_emitStack = []
-    @_socketIoClient = socketIoClient
-    @_uri = uri
     @_throttledProcessEmitStack = _.throttle @_processEmitStack, (bufferRate ? DEFAULT_BUFFER_RATE)
 
   connect: (callback) =>
-    @_socket = @_socketIoClient(@_uri)
-    @_socket.once 'connect', => callback()
-    @_socket.on 'identify',  => @emit 'identify', arguments
-    @_socket.on 'ready',     => @emit 'ready', arguments
+    @_resolveUri (error, uri) =>
+      return callback error if error?
+      @_socket = @_socketIoClient(uri)
+      @_socket.once 'connect', => callback()
+      @_socket.on 'identify',  => @emit 'identify', arguments
+      @_socket.on 'ready',     => @emit 'ready', arguments
 
   send: =>
     @_emitStack.push arguments
     @_throttledProcessEmitStack()
 
+  _getSrvAddress: =>
+    {service, domain} = @_options
+    protocol = @_getSrvProtocol()
+    return "_#{service}._#{protocol}.#{domain}"
+
+  _getSrvConnectionProtocol: =>
+    return 'wss' if @_options.secure
+    return 'ws'
+
+  _getSrvProtocol: =>
+    return 'socket-io-wss' if @_options.secure
+    return 'socket-io-ws'
+
   _processEmitStack: =>
+    console.log '_processEmitStack'
     return if _.isEmpty @_emitStack
 
     args = @_emitStack.shift()
+    console.log 'emit', args...
     @_socket.emit args...
 
     _.defer @_throttledProcessEmitStack
+
+  _resolveUri: (callback) =>
+    {protocol, hostname, port, resolveSrv} = @_options
+    return callback null, url.format({protocol, hostname, port, slashes: true}) unless resolveSrv
+
+    @_dns.resolveSrv @_getSrvAddress(), (error, addresses) =>
+      return callback error if error?
+      return callback new Error('SRV record found, but contained no valid addresses') if _.isEmpty addresses
+      return callback null, @_resolveUrlFromAddresses(addresses)
+
+  _resolveUrlFromAddresses: (addresses) =>
+    address = _.minBy addresses, 'priority'
+    return url.format {
+      protocol: @_getSrvConnectionProtocol()
+      hostname: address.name
+      port: address.port
+      slashes: true
+    }
+
 
 module.exports = BufferedSocket

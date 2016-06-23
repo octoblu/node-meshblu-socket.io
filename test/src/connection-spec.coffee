@@ -11,53 +11,72 @@ path           = require 'path'
 Connection     = require '../../src/connection'
 
 describe 'Connection', ->
+  describe '-> constructor', ->
+    describe 'when constructed with !resolveSrv and a domain', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: false, domain: 'foo.com'
+        expect(construction).to.throw 'resolveSrv is set to false, but received domain'
 
-  describe.only '-> connect', ->
-    describe 'when instantiated with a protocol, hostname, and port', ->
-      beforeEach (done) ->
-        @socket = new EventEmitter()
-        @socketIoClient = sinon.spy(=> @socket)
+    describe 'when constructed with !resolveSrv and a service', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: false, service: 'bacon'
+        expect(construction).to.throw 'resolveSrv is set to false, but received service'
 
-        @sut = new Connection protocol: 'wss', hostname: 'meshblu.octoblu.com', port: 443, {
-          socketIoClient: @socketIoClient
-          console: @console
-        }
-        @sut.connect done
-        @socket.emit 'connect'
+    describe 'when constructed with !resolveSrv and a secure', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: false, secure: false
+        expect(construction).to.throw 'resolveSrv is set to false, but received secure'
 
-      it 'should instantiate the socket client with the url', ->
-        expect(@socketIoClient).to.have.been.calledWith 'wss://meshblu.octoblu.com:443'
+    describe 'when constructed with resolveSrv and a protocol', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: true, protocol: 'http'
+        expect(construction).to.throw 'resolveSrv is set to true, but received protocol'
 
-    describe 'when instantiated with a service, domain, resolveSrv, and dns lookup succeeds', ->
-      beforeEach (done) ->
-        @socket = new EventEmitter()
-        @socketIoClient = sinon.spy(=> @socket)
-        @resolveSrv = sinon.stub().withArgs('_meshblu._socket-io-wss.octoblu.test').yields null, [{
-          piority: 1
-          weight: 1
+    describe 'when constructed with resolveSrv and a hostname', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: true, hostname: 'bacon.biz'
+        expect(construction).to.throw 'resolveSrv is set to true, but received hostname'
+
+    describe 'when constructed with resolveSrv and a port', ->
+      it 'should throw an exception', ->
+        construction = => new Connection resolveSrv: true, port: 443
+        expect(construction).to.throw 'resolveSrv is set to true, but received port'
+
+    describe 'when constructed with !resolveSrv and no url params', ->
+      it 'should throw an exception', ->
+        BufferedSocket = sinon.spy(=> new EventEmitter)
+        new Connection resolveSrv: false, auth: {}, {BufferedSocket: BufferedSocket}
+
+        expect(BufferedSocket).to.have.been.calledWithNew
+        expect(BufferedSocket).to.have.been.calledWith {
+          resolveSrv: false
+          protocol: 'https'
+          hostname: 'meshblu.octoblu.com'
           port: 443
-          name: 'meshblu-socket-io.octoblu.test'
-        }]
-
-
-        @sut = new Connection service: 'meshblu', domain: 'octoblu.test', resolveSrv: true, {
-          socketIoClient: @socketIoClient
-          console: @console
-          dns: {resolveSrv: @resolveSrv}
         }
-        @sut.connect done
-        @socket.emit 'connect'
 
-      it 'should instantiate the socket client with the resolved service hostname and port', ->
-        expect(@socketIoClient).to.have.been.calledWith 'wss://meshblu-socket-io.octoblu.test:443'
+    describe 'when constructed with resolveSrv and no srv params', ->
+      it 'should throw an exception', ->
+        BufferedSocket = sinon.spy(=> new EventEmitter)
+        new Connection resolveSrv: true, auth: {}, {BufferedSocket: BufferedSocket}
+
+        expect(BufferedSocket).to.have.been.calledWithNew
+        expect(BufferedSocket).to.have.been.calledWith {
+          resolveSrv: true
+          service: 'meshblu'
+          domain: 'octoblu.com'
+          secure: true
+        }
 
   describe 'when we pass in a fake socket.io', ->
     beforeEach ->
       @socket = new EventEmitter()
+      @socket.connect = sinon.stub()
+      @socket.send = sinon.stub()
 
       @console = error: sinon.spy()
       @sut = new Connection uuid: 'cats', token: 'dogs', {
-        socketIoClient: => @socket
+        BufferedSocket: => @socket
         console: @console
       }
 
@@ -72,7 +91,7 @@ describe 'Connection', ->
         @sut.connect done
         @socket.emit 'connect'
 
-      it 'should emit the uuid and token on identify', (done) ->
+      it.only 'should emit the uuid and token on identify', (done) ->
         @socket.on 'identity', (config) ->
           expect(config.uuid).to.deep.equal 'cats'
           expect(config.token).to.deep.equal 'dogs'
@@ -129,6 +148,7 @@ describe 'Connection', ->
     describe 'when resetToken is called with a uuid', ->
       beforeEach ->
         @sut.socket.emit = sinon.spy @sut.socket.emit
+
       it 'emit resetToken with the uuid', ->
         @sut.resetToken 'uuid'
         expect(@sut.socket.emit).to.have.been.calledWith 'resetToken', uuid: 'uuid'
