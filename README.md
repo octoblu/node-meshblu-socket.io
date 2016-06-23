@@ -23,7 +23,7 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
   * [conn.message(message)](#connmessagemessage)
   * [conn.register(params, callback)](#connregisterparams-callback)
-  * [conn.resetToken(query, callback)](#connresettokenauth-callback)
+  * [conn.resetToken(query, callback)](#connresettokenquery-callback)
   * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
   * [conn.subscribe(params)](#connsubscribeparams)
   * [conn.unregister(query, callback)](#connunregisterquery-callback)
