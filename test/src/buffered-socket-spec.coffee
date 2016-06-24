@@ -2,11 +2,12 @@
 {expect} = require 'chai'
 sinon = require 'sinon'
 
-{EventEmitter} = require 'events'
-BufferedSocket = require '../../src/buffered-socket'
+{EventEmitter}  = require 'events'
+BufferedSocket  = require '../../src/buffered-socket'
+AsymetricSocket = require '../asymmetric-socket'
 
 describe 'BufferedSocket', ->
-  describe 'SRV resolve', ->
+  describe '->connect', ->
     describe 'when constructed with resolveSrv and secure true', ->
       beforeEach ->
         @dns = resolveSrv: sinon.stub()
@@ -80,7 +81,13 @@ describe 'BufferedSocket', ->
         @socket = new EventEmitter
         @socketIoClient = sinon.spy(=> @socket)
 
-        options = resolveSrv: false, protocol: 'wss', hostname: 'thug.biz', port: 123, socketIoOptions: {some_option: true}
+        options = {
+          resolveSrv: false
+          protocol: 'wss'
+          hostname: 'thug.biz'
+          port: 123
+          socketIoOptions: {some_option: true}
+        }
         dependencies = {@socketIoClient}
 
         @sut = new BufferedSocket options, dependencies
@@ -95,3 +102,77 @@ describe 'BufferedSocket', ->
             some_option: true
             forceNew: true
           }
+
+  describe 'with a connected BufferedSocket', ->
+    @timeout 100
+
+    beforeEach (done) ->
+      @incoming = new EventEmitter
+      @outgoing = new EventEmitter
+      @socket = new AsymetricSocket {@incoming, @outgoing}
+      @sut = new BufferedSocket {}, {socketIoClient: => @socket}
+      @sut.connect done
+      @incoming.emit 'connect'
+
+    describe 'on "config"', ->
+      beforeEach (done) ->
+        @onConfig = sinon.spy => done()
+        @sut.once 'config', @onConfig
+        @incoming.emit 'config', foo: 'bar'
+
+      it 'should proxy the event', ->
+        expect(@onConfig).to.have.been.calledWith foo: 'bar'
+
+    describe 'on "connect"', ->
+      beforeEach (done) ->
+        @onConnect = sinon.spy => done()
+        @sut.once 'connect', @onConnect
+        @incoming.emit 'connect', foo: 'bar'
+
+      it 'should proxy the event', ->
+        expect(@onConnect).to.have.been.calledWith foo: 'bar'
+
+    describe 'on "disconnect"', ->
+      beforeEach (done) ->
+        @onDisconnect = sinon.spy => done()
+        @sut.once 'disconnect', @onDisconnect
+        @incoming.emit 'disconnect', 'Eula Tucker'
+
+      it 'should proxy the event', ->
+        expect(@onDisconnect).to.have.been.calledWith 'Eula Tucker'
+
+    describe 'on "error"', ->
+      beforeEach (done) ->
+        @onError = sinon.spy => done()
+        @sut.once 'error', @onError
+        @incoming.emit 'error', 'Donald Bridges'
+
+      it 'should proxy the event', ->
+        expect(@onError).to.have.been.calledWith 'Donald Bridges'
+
+    describe 'on "message"', ->
+      beforeEach (done) ->
+        @onMessage = sinon.spy => done()
+        @sut.once 'message', @onMessage
+        @incoming.emit 'message', name: 'me.net'
+
+      it 'should proxy the event', ->
+        expect(@onMessage).to.have.been.calledWith name: 'me.net'
+
+    describe 'on "notReady"', ->
+      beforeEach (done) ->
+        @onNotReady = sinon.spy => done()
+        @sut.once 'notReady', @onNotReady
+        @incoming.emit 'notReady', lawba: 'Loretta Cannon'
+
+      it 'should proxy the event', ->
+        expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
+
+    describe 'on "ready"', ->
+      beforeEach (done) ->
+        @onReady = sinon.spy => done()
+        @sut.once 'ready', @onReady
+        @incoming.emit 'ready', mapjoziw: 'Edward Jensen'
+
+      it 'should proxy the event', ->
+        expect(@onReady).to.have.been.calledWith mapjoziw: 'Edward Jensen'

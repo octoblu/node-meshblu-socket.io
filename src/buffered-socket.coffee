@@ -5,6 +5,7 @@ socketIoClient = require 'socket.io-client'
 url            = require 'url'
 
 DEFAULT_BUFFER_RATE = 100
+PROXIED_EVENTS = [ 'config', 'connect', 'disconnect', 'error', 'identify', 'message', 'notReady', 'ready' ]
 
 class BufferedSocket extends EventEmitter
   constructor: (options, dependencies={}) ->
@@ -21,8 +22,8 @@ class BufferedSocket extends EventEmitter
       return callback error if error?
       @_socket = @_socketIoClient(uri, @_socketIoOptions)
       @_socket.once 'connect', => callback()
-      @_socket.on 'identify',  => @emit 'identify', arguments
-      @_socket.on 'ready',     => @emit 'ready', arguments
+
+      @_proxyIncomingEvents PROXIED_EVENTS
 
   send: =>
     @_emitStack.push arguments
@@ -42,14 +43,18 @@ class BufferedSocket extends EventEmitter
     return 'socket-io-ws'
 
   _processEmitStack: =>
-    console.log '_processEmitStack'
     return if _.isEmpty @_emitStack
 
     args = @_emitStack.shift()
-    console.log 'emit', args...
     @_socket.emit args...
 
     _.defer @_throttledProcessEmitStack
+
+  _proxyIncomingEvent: (event) =>
+    @_socket.on event, => @emit event, arguments...
+
+  _proxyIncomingEvents: (events) =>
+    _.each events, @_proxyIncomingEvent
 
   _resolveUri: (callback) =>
     {protocol, hostname, port, resolveSrv} = @_options
