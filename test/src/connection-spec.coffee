@@ -59,11 +59,12 @@ describe 'Connection', ->
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
-          resolveSrv: false
-          protocol: 'wss'
-          hostname: 'meshblu-socket-io.octoblu.com'
-          port: 443
-          options: undefined
+          srvOptions:
+            resolveSrv: false
+            protocol: 'wss'
+            hostname: 'meshblu-socket-io.octoblu.com'
+            port: 443
+            socketIoOptions: undefined
         }
 
     describe 'when constructed with resolveSrv and no srv params', ->
@@ -73,11 +74,12 @@ describe 'Connection', ->
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
-          resolveSrv: true
-          service: 'meshblu'
-          domain: 'octoblu.com'
-          secure: true
-          options: undefined
+          srvOptions:
+            resolveSrv: true
+            service: 'meshblu'
+            domain: 'octoblu.com'
+            secure: true
+            socketIoOptions: undefined
         }
 
     describe 'when constructed with socketio options', ->
@@ -87,12 +89,13 @@ describe 'Connection', ->
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
-          protocol: 'wss'
-          hostname: 'meshblu-socket-io.octoblu.com'
-          port: 443
-          resolveSrv: false
-          options:
-            forceNew: true
+          srvOptions:
+            protocol: 'wss'
+            hostname: 'meshblu-socket-io.octoblu.com'
+            port: 443
+            resolveSrv: false
+            socketIoOptions:
+              forceNew: true
         }
 
   describe 'when constructed with a fake BufferedSocket constructor', ->

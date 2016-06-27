@@ -1,15 +1,13 @@
 _              = require 'lodash'
-socketIoClient = require 'socket.io-client'
 
 ProxySocket    = require './proxy-socket'
-SrvSocket      = require './srv-socket'
 
 DEFAULT_BUFFER_RATE = 100
 
 class BufferedSocket extends ProxySocket
   constructor: ({bufferRate, srvOptions}, dependencies={}) ->
-    @_socketIoClient = dependencies.socketIoClient ? socketIoClient
-    @_socket = dependencies.socket ? new SrvSocket srvOptions
+    ReconnectSocket = dependencies.ReconnectSocket ? require './reconnect-socket'
+    @_socket = new ReconnectSocket {srvOptions}
 
     @_sendQueue = []
     @_throttledProcessEmitQueue = _.throttle @_processSendQueue, (bufferRate ? DEFAULT_BUFFER_RATE)
@@ -17,6 +15,8 @@ class BufferedSocket extends ProxySocket
     super # Must be called after @_socket is assigned
 
   connect: (callback) =>
+    @_socket.once 'ready', =>
+      console.log 'bufferedSocket ready'
     @_socket.connect callback
 
   send: =>

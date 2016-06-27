@@ -16,8 +16,13 @@ class SrvSocket extends ProxySocket
       return callback error if error?
       @_socket = @_socketIoClient(uri, @_socketIoOptions)
       @_socket.once 'connect', => callback()
+      @_socket.once 'ready', =>
+        console.log 'srvSocket ready'
 
-      super._proxyDefaultIncomingEvents()
+      @_proxyDefaultIncomingEvents() # From super
+
+  send: =>
+    @_socket.emit arguments...
 
   _getSrvAddress: =>
     {service, domain} = @_options

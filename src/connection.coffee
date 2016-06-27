@@ -1,12 +1,12 @@
 stableStringify = require 'json-stable-stringify'
-{EventEmitter}  = require 'events'
 _               = require 'lodash'
 NodeRSA         = require 'node-rsa'
 url             = require 'url'
 
 BufferedSocket = require './buffered-socket'
+ProxySocket    = require './proxy-socket'
 
-class Connection extends EventEmitter
+class Connection extends ProxySocket
   constructor: (options, dependencies={}) ->
     @_BufferedSocket = dependencies.BufferedSocket ? BufferedSocket
     @_console        = dependencies.console ? console
@@ -15,12 +15,14 @@ class Connection extends EventEmitter
     @_subscriptions = []
     @_privateKey = new NodeRSA options.privateKey if options.privateKey
 
-    {socket, protocol, hostname, port, service, domain, secure, resolveSrv, options} = options
-    @_socket = @_buildSocket {socket, protocol, hostname, port, service, domain, secure, resolveSrv, options}
+    {socket, protocol, hostname, port, service, domain, secure, resolveSrv} = options
+    srvOptions = {protocol, hostname, port, service, domain, secure, resolveSrv, socketIoOptions: options.options}
+    @_socket = @_buildSocket {socket, srvOptions}
     @_socket.on 'config', @_onConfig
     @_socket.on 'identify', @_onIdentify
     @_socket.on 'message', @_onMessage
     @_socket.on 'ready', @_onReady
+    super
 
   connect: (callback) =>
     @_socket.connect(callback)
@@ -82,26 +84,34 @@ class Connection extends EventEmitter
     throw new Error('resolveSrv is set to true, but received hostname') if hostname?
     throw new Error('resolveSrv is set to true, but received port')     if port?
 
-  _buildSocket: ({socket, protocol, hostname, port, service, domain, secure, resolveSrv, options}) =>
+  _buildSocket: ({socket, srvOptions}) =>
     return socket if socket?
 
-    return @_buildSrvSocket({protocol, hostname, port, service, domain, secure, options}) if resolveSrv
-    return @_buildUrlSocket({protocol, hostname, port, service, domain, secure, options})
+    return @_buildSrvSocket({srvOptions}) if srvOptions.resolveSrv
+    return @_buildUrlSocket({srvOptions})
 
-  _buildSrvSocket: ({protocol, hostname, port, service, domain, secure, options}) =>
-    @_assertNoUrl({protocol, hostname, port})
-    service ?= 'meshblu'
-    domain  ?= 'octoblu.com'
-    secure  ?= true
-    return new @_BufferedSocket {resolveSrv: true, service, domain, secure, options}
+  _buildSrvSocket: ({srvOptions}) =>
+    @_assertNoUrl _.pick(srvOptions, 'protocol', 'hostname', 'port')
 
-  _buildUrlSocket: ({protocol, hostname, port, service, domain, secure, options}) =>
-    @_assertNoSrv({service, domain, secure})
-    protocol ?= 'wss'
-    hostname ?= 'meshblu-socket-io.octoblu.com'
-    port     ?= 443
-    try port = parseInt port
-    return new @_BufferedSocket {resolveSrv: false, protocol, hostname, port, options}
+    return new @_BufferedSocket {
+      srvOptions:
+        resolveSrv: true
+        service: srvOptions.service ? 'meshblu'
+        domain:  srvOptions.domain ? 'octoblu.com'
+        secure:  srvOptions.secure ? true
+        socketIoOptions: srvOptions.socketIoOptions
+    }
+
+  _buildUrlSocket: ({srvOptions}) =>
+    @_assertNoSrv _.pick(srvOptions, 'service', 'domain', 'secure')
+    return new @_BufferedSocket {
+      srvOptions:
+        resolveSrv: false
+        protocol: srvOptions.protocol ? 'wss'
+        hostname: srvOptions.hostname ? 'meshblu-socket-io.octoblu.com'
+        port: try parseInt(srvOptions.port ? 443)
+        socketIoOptions: srvOptions.socketIoOptions
+      }
 
   _decrypt: ({data}) =>
     return JSON.parse @_privateKey.decrypt data

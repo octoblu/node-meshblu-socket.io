@@ -71,20 +71,6 @@ describe 'ProxySocket', ->
         it 'should proxy the event', ->
           expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
 
-      xdescribe 'when a rate-limiting "notReady" is emitted with 429 error code', ->
-        beforeEach (done) ->
-          @socketIoClient.reset()
-          @onNotReady = sinon.spy => done()
-          @sut.once 'notReady', @onNotReady
-          @socket.incoming.emit 'notReady', lawba: 'Loretta Cannon'
-
-        it 'should proxy the event', ->
-          expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
-
-        it 'should attempt to reconnect the socket', ->
-          expect(@socketIoClient).to.have.been.called
-          # expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
-
     describe 'on "ready"', ->
       beforeEach (done) ->
         @onReady = sinon.spy => done()

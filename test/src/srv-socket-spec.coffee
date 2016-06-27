@@ -102,3 +102,31 @@ describe 'SrvSocket spec', ->
             some_option: true
             forceNew: true
           }
+
+  describe 'with a connected socket', ->
+    beforeEach (done) ->
+      @dns = resolveSrv: sinon.stub().yields null, [{
+        name: 'secure.bikes'
+        port: 443
+        priority: 1
+        weight: 100
+      }]
+      @socket = new AsymetricSocket
+      @socketIoClient = sinon.spy(=> @socket)
+
+      options = resolveSrv: true, service: 'meshblu', domain: 'octoblu.com', secure: true
+      dependencies = {@dns, @socketIoClient}
+
+      @sut = new SrvSocket options, dependencies
+      @sut.connect done
+      @socket.incoming.emit 'connect'
+
+    describe '->send', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          sinon.spy @socket, 'emit'
+          @socket.outgoing.on 'message', => done()
+          @sut.send 'message', 'Minerva Walters'
+
+        it 'should call socket.emit', ->
+          expect(@socket.emit).to.have.been.called
