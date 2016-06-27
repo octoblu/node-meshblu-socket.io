@@ -1,78 +1,34 @@
-dns            = require 'dns'
-{EventEmitter} = require 'events'
 _              = require 'lodash'
 socketIoClient = require 'socket.io-client'
-url            = require 'url'
+
+ProxySocket    = require './proxy-socket'
+SrvSocket      = require './srv-socket'
 
 DEFAULT_BUFFER_RATE = 100
-PROXIED_EVENTS = [ 'config', 'connect', 'disconnect', 'error', 'identify', 'message', 'notReady', 'ready' ]
 
-class BufferedSocket extends EventEmitter
-  constructor: (options, dependencies={}) ->
+class BufferedSocket extends ProxySocket
+  constructor: ({bufferRate, srvOptions}, dependencies={}) ->
     @_socketIoClient = dependencies.socketIoClient ? socketIoClient
-    @_dns = dependencies.dns ? dns
-    @_options = options
-    @_socketIoOptions = _.defaults options.socketIoOptions, {forceNew: true}
+    @_socket = dependencies.socket ? new SrvSocket srvOptions
 
-    @_emitStack = []
-    @_throttledProcessEmitStack = _.throttle @_processEmitStack, (@_options.bufferRate ? DEFAULT_BUFFER_RATE)
+    @_sendQueue = []
+    @_throttledProcessEmitQueue = _.throttle @_processSendQueue, (bufferRate ? DEFAULT_BUFFER_RATE)
+
+    super # Must be called after @_socket is assigned
 
   connect: (callback) =>
-    @_resolveUri (error, uri) =>
-      return callback error if error?
-      @_socket = @_socketIoClient(uri, @_socketIoOptions)
-      @_socket.once 'connect', => callback()
-
-      @_proxyIncomingEvents PROXIED_EVENTS
+    @_socket.connect callback
 
   send: =>
-    @_emitStack.push arguments
-    @_throttledProcessEmitStack()
+    @_sendQueue.push arguments
+    @_throttledProcessEmitQueue()
 
-  _getSrvAddress: =>
-    {service, domain} = @_options
-    protocol = @_getSrvProtocol()
-    return "_#{service}._#{protocol}.#{domain}"
+  _processSendQueue: =>
+    return if _.isEmpty @_sendQueue
 
-  _getSrvConnectionProtocol: =>
-    return 'wss' if @_options.secure
-    return 'ws'
+    args = @_sendQueue.shift()
+    @_socket.send args...
 
-  _getSrvProtocol: =>
-    return 'socket-io-wss' if @_options.secure
-    return 'socket-io-ws'
-
-  _processEmitStack: =>
-    return if _.isEmpty @_emitStack
-
-    args = @_emitStack.shift()
-    @_socket.emit args...
-
-    _.defer @_throttledProcessEmitStack
-
-  _proxyIncomingEvent: (event) =>
-    @_socket.on event, => @emit event, arguments...
-
-  _proxyIncomingEvents: (events) =>
-    _.each events, @_proxyIncomingEvent
-
-  _resolveUri: (callback) =>
-    {protocol, hostname, port, resolveSrv} = @_options
-    return callback null, url.format({protocol, hostname, port, slashes: true}) unless resolveSrv
-
-    @_dns.resolveSrv @_getSrvAddress(), (error, addresses) =>
-      return callback error if error?
-      return callback new Error('SRV record found, but contained no valid addresses') if _.isEmpty addresses
-      return callback null, @_resolveUrlFromAddresses(addresses)
-
-  _resolveUrlFromAddresses: (addresses) =>
-    address = _.minBy addresses, 'priority'
-    return url.format {
-      protocol: @_getSrvConnectionProtocol()
-      hostname: address.name
-      port: address.port
-      slashes: true
-    }
-
+    _.defer @_throttledProcessEmitQueue
 
 module.exports = BufferedSocket

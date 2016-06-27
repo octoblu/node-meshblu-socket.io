@@ -1,5 +1,11 @@
+{EventEmitter} = require 'events'
+
 class AsymetricSocket
-  constructor: ({@incoming, @outgoing}) ->
+  constructor: ->
+    @incoming = new EventEmitter
+    @outgoing = new EventEmitter
+
+  connect: =>
 
   emit: =>
     @outgoing.emit arguments...
@@ -12,5 +18,8 @@ class AsymetricSocket
 
   on: =>
     @incoming.on arguments...
+
+  send: =>
+    @outgoing.emit arguments...
 
 module.exports = AsymetricSocket

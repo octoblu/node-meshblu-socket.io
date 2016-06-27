@@ -2,177 +2,66 @@
 {expect} = require 'chai'
 sinon = require 'sinon'
 
-{EventEmitter}  = require 'events'
+_              = require 'lodash'
+
 BufferedSocket  = require '../../src/buffered-socket'
 AsymetricSocket = require '../asymmetric-socket'
 
-describe 'BufferedSocket', ->
-  describe '->connect', ->
-    describe 'when constructed with resolveSrv and secure true', ->
-      beforeEach ->
-        @dns = resolveSrv: sinon.stub()
-        @socket = new EventEmitter
-        @socketIoClient = sinon.spy(=> @socket)
+describe.only 'BufferedSocket', ->
+  @timeout 100
 
-        options = resolveSrv: true, service: 'meshblu', domain: 'octoblu.com', secure: true
-        dependencies = {@dns, @socketIoClient}
+  beforeEach ->
+    @socket = new AsymetricSocket
+    @socket.connect = sinon.stub()
+    @sut = new BufferedSocket {}, {@socket}
 
-        @sut = new BufferedSocket options, dependencies
-
-      describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @dns.resolveSrv.withArgs('_meshblu._socket-io-wss.octoblu.com').yields null, [{
-            name: 'mesh.biz'
-            port: 34
-            priority: 1
-            weight: 100
-          }]
-          @sut.connect done
-          @socket.emit 'connect'
-
-        it 'should call request with the resolved url', ->
-          expect(@socketIoClient).to.have.been.calledWith 'wss://mesh.biz:34'
-
-    describe 'when constructed with resolveSrv and secure false', ->
-      beforeEach ->
-        @dns = resolveSrv: sinon.stub()
-        @socket = new EventEmitter
-        @socketIoClient = sinon.spy(=> @socket)
-
-        options = resolveSrv: true, service: 'meshblu', domain: 'octoblu.com', secure: false
-        dependencies = {@dns, @socketIoClient}
-
-        @sut = new BufferedSocket options, dependencies
-
-      describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @dns.resolveSrv.withArgs('_meshblu._socket-io-ws.octoblu.com').yields null, [{
-            name: 'insecure.xxx'
-            port: 80
-            priority: 1
-            weight: 100
-          }]
-          @sut.connect done
-          @socket.emit 'connect'
-
-        it 'should call request with the resolved url', ->
-          expect(@socketIoClient).to.have.been.calledWith 'ws://insecure.xxx:80'
-
-    describe 'when constructed without resolveSrv', ->
-      beforeEach ->
-        @socket = new EventEmitter
-        @socketIoClient = sinon.spy(=> @socket)
-
-        options = resolveSrv: false, protocol: 'wss', hostname: 'thug.biz', port: 123
-        dependencies = {@socketIoClient}
-
-        @sut = new BufferedSocket options, dependencies
-
-      describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @sut.connect done
-          @socket.emit 'connect'
-
-        it 'should call request with the formatted url', ->
-          expect(@socketIoClient).to.have.been.calledWith 'wss://thug.biz:123'
-
-    describe 'when constructed socketIO options', ->
-      beforeEach ->
-        @socket = new EventEmitter
-        @socketIoClient = sinon.spy(=> @socket)
-
-        options = {
-          resolveSrv: false
-          protocol: 'wss'
-          hostname: 'thug.biz'
-          port: 123
-          socketIoOptions: {some_option: true}
-        }
-        dependencies = {@socketIoClient}
-
-        @sut = new BufferedSocket options, dependencies
-
-      describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @sut.connect done
-          @socket.emit 'connect'
-
-        it 'should call request with the formatted url', ->
-          expect(@socketIoClient).to.have.been.calledWith 'wss://thug.biz:123', {
-            some_option: true
-            forceNew: true
-          }
-
-  describe 'with a connected BufferedSocket', ->
-    @timeout 100
-
-    beforeEach (done) ->
-      @incoming = new EventEmitter
-      @outgoing = new EventEmitter
-      @socket = new AsymetricSocket {@incoming, @outgoing}
-      @sut = new BufferedSocket {}, {socketIoClient: => @socket}
-      @sut.connect done
-      @incoming.emit 'connect'
-
-    describe 'on "config"', ->
+  describe '-> connect', ->
+    describe 'when socket.connect yields', ->
       beforeEach (done) ->
-        @onConfig = sinon.spy => done()
-        @sut.once 'config', @onConfig
-        @incoming.emit 'config', foo: 'bar'
+        @socket.connect.yields null
+        @sut.connect done
+        @socket.incoming.emit 'connect'
 
-      it 'should proxy the event', ->
-        expect(@onConfig).to.have.been.calledWith foo: 'bar'
+      it 'should call socket.connect', ->
+        expect(@socket.connect).to.have.been.called
 
-    describe 'on "connect"', ->
+    describe 'when socket.connect yields an error', ->
       beforeEach (done) ->
-        @onConnect = sinon.spy => done()
-        @sut.once 'connect', @onConnect
-        @incoming.emit 'connect', foo: 'bar'
+        @socket.connect.yields new Error 'Whoops'
+        @sut.connect (@error) => done()
+        @socket.incoming.emit 'connect'
 
-      it 'should proxy the event', ->
-        expect(@onConnect).to.have.been.calledWith foo: 'bar'
+      it 'should call socket.connect', ->
+        expect(@socket.connect).to.have.been.called
 
-    describe 'on "disconnect"', ->
+      it 'should yield the error', ->
+        expect(=> throw @error).to.throw 'Whoops'
+
+  describe '-> send', ->
+    describe 'when called once', ->
       beforeEach (done) ->
-        @onDisconnect = sinon.spy => done()
-        @sut.once 'disconnect', @onDisconnect
-        @incoming.emit 'disconnect', 'Eula Tucker'
+        @socket.outgoing.once 'message', => done()
+        sinon.spy @socket, 'send'
+        @sut.send 'message', foo: 'bar'
 
-      it 'should proxy the event', ->
-        expect(@onDisconnect).to.have.been.calledWith 'Eula Tucker'
+      it 'should call send on the socket', ->
+        expect(@socket.send).to.have.been.calledWith 'message', foo: 'bar'
 
-    describe 'on "error"', ->
+    describe 'when called twice', ->
       beforeEach (done) ->
-        @onError = sinon.spy => done()
-        @sut.once 'error', @onError
-        @incoming.emit 'error', 'Donald Bridges'
+        sinon.spy @socket, 'send'
+        @sut.send 'message', foo: 'bar'
+        @sut.send 'message', najal: 'Mario Schneider'
+        _.delay done, 50
 
-      it 'should proxy the event', ->
-        expect(@onError).to.have.been.calledWith 'Donald Bridges'
+      it 'should call send on the socket once', ->
+        expect(@socket.send).to.have.been.calledOnce
+        expect(@socket.send).to.have.been.calledWith 'message', foo: 'bar'
 
-    describe 'on "message"', ->
-      beforeEach (done) ->
-        @onMessage = sinon.spy => done()
-        @sut.once 'message', @onMessage
-        @incoming.emit 'message', name: 'me.net'
-
-      it 'should proxy the event', ->
-        expect(@onMessage).to.have.been.calledWith name: 'me.net'
-
-    describe 'on "notReady"', ->
-      beforeEach (done) ->
-        @onNotReady = sinon.spy => done()
-        @sut.once 'notReady', @onNotReady
-        @incoming.emit 'notReady', lawba: 'Loretta Cannon'
-
-      it 'should proxy the event', ->
-        expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
-
-    describe 'on "ready"', ->
-      beforeEach (done) ->
-        @onReady = sinon.spy => done()
-        @sut.once 'ready', @onReady
-        @incoming.emit 'ready', mapjoziw: 'Edward Jensen'
-
-      it 'should proxy the event', ->
-        expect(@onReady).to.have.been.calledWith mapjoziw: 'Edward Jensen'
+      describe 'when 75 more milliseconds have elapsed (for a total of 125ms)', ->
+        beforeEach (done) ->
+          _.delay done, 75
+          
+        it 'should have called send on the socket twice', ->
+          expect(@socket.send).to.have.been.calledTwice
+          expect(@socket.send).to.have.been.calledWith 'message', najal: 'Mario Schneider'
