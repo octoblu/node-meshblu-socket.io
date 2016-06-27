@@ -24,10 +24,10 @@ class Connection extends ProxySocket
     @_socket.on 'ready', @_onReady
     super
 
-  close: (callback) =>
+  close: (callback=->) =>
     @_socket.close callback
 
-  connect: (callback) =>
+  connect: (callback=->) =>
     @_socket.connect(callback)
 
   device: (query, callback) =>
@@ -71,6 +71,9 @@ class Connection extends ProxySocket
     data = @_uuidOrObject data
     @_socket.send 'resetToken', data, callback
 
+  revokeToken: (auth, callback) =>
+    @_socket.send 'revokeToken', auth, callback
+
   sign: (data) =>
     @_privateKey.sign stableStringify(data), 'base64'
 
@@ -79,6 +82,9 @@ class Connection extends ProxySocket
 
     @subscriptions = _.unionBy @subscriptions, [data], _.isEqual
     @_socket.send 'subscribe', data
+
+  unregister: (query, callback) =>
+    @_socket.send 'unregister', query, callback
 
   unsubscribe: (data) =>
     data = @_uuidOrObject data

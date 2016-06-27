@@ -17,19 +17,20 @@ A client side library for using the [Meshblu Socket.IO API](https://meshblu-sock
   * [Event: "notReady"](#event-notready)
   * [Event: "ready"](#event-ready)
 * [Methods](#methods)
-  * [createConnection(options)](#createconnectionoptions)
-  * [conn.device(query, callback)](#conndevicequery-callback)
-  * [conn.devices(query, callback)](#conndevicesquery-callback)
-  * [conn.generateAndStoreToken(query, callback)](#conngenerateandstoretokenquery-callback)
-  * [conn.message(message)](#connmessagemessage)
-  * [conn.register(params, callback)](#connregisterparams-callback)
-  * [conn.resetToken(query, callback)](#connresettokenquery-callback)
-  * [conn.revokeToken(auth, callback)](#connrevoketokenauth-callback)
-  * [conn.subscribe(params)](#connsubscribeparams)
-  * [conn.unregister(query, callback)](#connunregisterquery-callback)
-  * [conn.unsubscribe(params)](#connunsubscribeparams)
-  * [conn.update(query, callback)](#connupdatequeryupdate-callback)
-  * [conn.whoami(obj, callback)](#connwhoamiobj-callback)
+  * [constructor(options)](#constructoroptions)
+  * [meshblu.connect(callback)](#meshbluconnectcallback)
+  * [meshblu.device(query, callback)](#meshbludevicequery-callback)
+  * [meshblu.devices(query, callback)](#meshbludevicesquery-callback)
+  * [meshblu.generateAndStoreToken(query, callback)](#meshblugenerateandstoretokenquery-callback)
+  * [meshblu.message(message)](#meshblumessagemessage)
+  * [meshblu.register(params, callback)](#meshbluregisterparams-callback)
+  * [meshblu.resetToken(query, callback)](#meshbluresettokenquery-callback)
+  * [meshblu.revokeToken(auth, callback)](#meshblurevoketokenauth-callback)
+  * [meshblu.subscribe(params)](#meshblusubscribeparams)
+  * [meshblu.unregister(query, callback)](#meshbluunregisterquery-callback)
+  * [meshblu.unsubscribe(params)](#meshbluunsubscribeparams)
+  * [meshblu.update(query, callback)](#meshbluupdatequeryupdate-callback)
+  * [meshblu.whoami(obj, callback)](#meshbluwhoamiobj-callback)
 
 # Getting Started
 
@@ -41,32 +42,28 @@ The Meshblu client-side library is best obtained through NPM:
 npm install --save meshblu
 ```
 
-Alternatively, a browser version of the library is available from https://cdn.octoblu.com/js/meshblu/latest/meshblu.bundle.js. This exposes a global object on `window.meshblu`.
-
-```html
-<script type="text/javascript" src="https://cdn.octoblu.com/js/meshblu/latest/meshblu.bundle.js" ></script>
-```
-
 ## Quick Start
 
 The client side library establishes a secure socket.io connection to Meshblu at `https://meshblu-socket-io.octoblu.com` by default.
 
 ```javascript
-var meshblu = require('meshblu');
-var conn = meshblu.createConnection({
+var MeshbluSocketIO = require('meshblu');
+var meshblu = new MeshbluSocketIO({
+  resolveSrv: true,
   uuid: '78159106-41ca-4022-95e8-2511695ce64c',
   token: 'd5265dbc4576a88f8654a8fc2c4d46a6d7b85574'
-});
-conn.on('ready', function(){
+})
+meshblu.on('ready', function(){
   console.log('Ready to rock');
 });
+meshblu.connect();
 ```
 
 # Events
 
 ## Event: "config"
 
-The `config` event is emitted whenever a device is updated. Use the [`conn.subscribe`](#connsubscribeparams) API to subscribe to `config` events. In order to receive config events from a device, your connection must be authenticated as a device that is in the target device's `configure.sent` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+The `config` event is emitted whenever a device is updated. Use the [`meshblu.subscribe`](#meshblusubscribeparams) API to subscribe to `config` events. In order to receive config events from a device, your connection must be authenticated as a device that is in the target device's `configure.sent` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
 * `device` Meshblu device that was modified
   * `uuid` Uuid of the device that was modified
@@ -74,7 +71,7 @@ The `config` event is emitted whenever a device is updated. Use the [`conn.subsc
 ##### Example
 
 ```javascript
-conn.on('config', function(device){
+meshblu.on('config', function(device){
   console.log('on config');
   console.log(JSON.stringify(device, null, 2));
   // on config
@@ -95,7 +92,7 @@ otherConn.update({uuid: '78159106-41ca-4022-95e8-2511695ce64c', foo: 'bar'});
 
 ## Event: "message"
 
-The `message` event is emitted whenever a device sends or receives a message. Use the [`conn.subscribe`](#connsubscribeparams) API to subscribe to `message` events for a device. In order to receive broadcast from a device, your connection must be authenticated as a device that is in the target device's `broadcast.sent` whitelist. To receive message sent by a device, your connection must be in the target's `message.sent` whitelist. To receive messages from other devices, they must be in the authorized device's `message.from` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
+The `message` event is emitted whenever a device sends or receives a message. Use the [`meshblu.subscribe`](#meshblusubscribeparams) API to subscribe to `message` events for a device. In order to receive broadcast from a device, your connection must be authenticated as a device that is in the target device's `broadcast.sent` whitelist. To receive message sent by a device, your connection must be in the target's `message.sent` whitelist. To receive messages from other devices, they must be in the authorized device's `message.from` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
 * `message` Message object that was received.
   * `devices` Array of UUIDs to whom the message was sent. It will contain the string `"*"`, If the message was a broadcast.
@@ -104,7 +101,7 @@ The `message` event is emitted whenever a device sends or receives a message. Us
 ##### Example
 
 ```javascript
-conn.on('message', function(message){
+meshblu.on('message', function(message){
   console.log('on message');
   console.log(JSON.stringify(message, null, 2));
   // on message
@@ -135,7 +132,7 @@ The `notReady` event is emitted when certain things go wrong. These include emit
 When an incorrect `identity` event is rejected by Meshblu
 
 ```javascript
-conn.on('notReady', function(response){
+meshblu.on('notReady', function(response){
   console.error('notReady');
   console.error(JSON.stringify(response, null, 2));
   // notReady
@@ -170,7 +167,7 @@ The `"ready"` event is emitted every time the connection is re-established. In n
 When a valid `identity` is accepted by Meshblu:
 
 ```javascript
-conn.on('ready', function(response){
+meshblu.on('ready', function(response){
   console.log('ready');
   console.log(JSON.stringify(response, null, 2));
   // ready
@@ -185,15 +182,20 @@ conn.on('ready', function(response){
 
 # Methods
 
-## createConnection(options)
+## constructor(options)
 
 Establishes a socket.io connection to meshblu and returns the connection object.
 
 ##### Arguments
 
 * `options` connection options with the following keys:
-  * `server` The hostname of the Meshblu server to connect to. (Default: `meshblu-socket-io.octoblu.com`)
-  * `port` The port of the Meshblu server to connect to. (Default: `443`)
+  * `protocol` The protocol to use when connecting to the server. May not be passed in if `resolveSrv` is true. Must be one of ws/wss (Default `wss`)
+  * `hostname` The hostname of the Meshblu server to connect to. May not be passed in if `resolveSrv` is true. (Default: `meshblu-socket-io.octoblu.com`)
+  * `port` The port of the Meshblu server to connect to. May not be passed in if `resolveSrv` is true. (Default: `443`)
+  * `service` The service for which to look up an SRV record for. May only be passed in if `resolveSrv` is false. (Default: `meshblu`)
+  * `domain` The domain for which to look up an SRV record on. May only be passed in if `resolveSrv` is false. (Default: `octoblu.com`)
+  * `secure` Enable transport layer encryption. May only be passed in if `resolveSrv` is false. (Default: true)
+  * `resolveSrv` Enable automatic service resolution using the SRV records.
   * `uuid` UUID of the device to connect with.
   * `token` Token of the device to connect with.
 
@@ -204,15 +206,40 @@ If the `uuid` and `token` options are omitted, Meshblu will create a new device 
 ##### Example
 
 ```javascript
-var conn = meshblu.createConnection({
-  server: 'meshblu-socket-io.octoblu.com'
-  port: 443
+var MeshbluSocketIO = require('meshblu');
+var conn = new MeshbluSocketIO({
+  resolveSrv: true,
   uuid: '78159106-41ca-4022-95e8-2511695ce64c',
   token: 'd5265dbc4576a88f8654a8fc2c4d46a6d7b85574'
+})
+```
+
+## meshblu.connect(callback)
+
+Establish a socket.io connection to Meshblu.
+
+##### Arguments
+
+* `callback` Optional Function that will be called when the socket.io connection is established.
+  * `error` Javascript error object when the connection failed. Will be undefined if no error occured.
+
+##### Note
+
+The callback is called once the socket.io connection is *connected*, but not yet *authorized*. All calls should wait until after the [ready event](#event-ready) has occurred.
+
+##### Example
+
+
+```javascript
+meshblu.connect(function(error){
+  console.log('connect');
+  console.log(error);
+  // connect
+  // undefined
 });
 ```
 
-## conn.device(query, callback)
+## meshblu.device(query, callback)
 
 Retrieve a device from the Meshblu device registry by its `uuid`. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -234,7 +261,7 @@ In Meshblu, it is not possible to distinguish between a device not existing and 
 When requesting a valid device that the authorized device may view:
 
 ```javascript
-conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
+meshblu.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
   console.log('device');
   console.log(JSON.stringify(result, null, 2));
   // device
@@ -257,7 +284,7 @@ conn.device({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
 When requesting a non-existing device, or a device the authenticated device may not view:
 
 ```javascript
-conn.device({uuid: 'i-made-this-uuid-up'}, function(result){
+meshblu.device({uuid: 'i-made-this-uuid-up'}, function(result){
   console.log('device');
   console.log(JSON.stringify(result, null, 2));
   // device
@@ -267,7 +294,7 @@ conn.device({uuid: 'i-made-this-uuid-up'}, function(result){
 });
 ```
 
-## conn.devices(query, callback)
+## meshblu.devices(query, callback)
 
 Retrieve devices from the Meshblu device registry. In order to retrieve a target device, your connection must be authenticated as a device that is in the target device's `discover.view` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -285,7 +312,7 @@ Retrieve devices from the Meshblu device registry. In order to retrieve a target
 When requesting valid devices that the authorized device may view:
 
 ```javascript
-conn.devices({color: 'blue'}, function(result){
+meshblu.devices({color: 'blue'}, function(result){
   console.log('devices');
   console.log(JSON.stringify(result, null, 2));
   // devices
@@ -309,7 +336,7 @@ conn.devices({color: 'blue'}, function(result){
 When requesting a non-existing devices, or devices the authenticated device may not view:
 
 ```javascript
-conn.devices({color: 'i-made-this-color-up'}, function(result){
+meshblu.devices({color: 'i-made-this-color-up'}, function(result){
   console.log('devices');
   console.log(JSON.stringify(result, null, 2));
   // device
@@ -319,7 +346,7 @@ conn.devices({color: 'i-made-this-color-up'}, function(result){
 });
 ```
 
-## conn.generateAndStoreToken(query, callback)
+## meshblu.generateAndStoreToken(query, callback)
 
 Generate a session token for a device in the Meshblu device registry. In order to generate a token, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -343,7 +370,7 @@ In Meshblu, it is not possible to distinguish between a device not existing and 
 When generateAndStoreToken is called for a valid device that the authorized device may update:
 
 ```javascript
-conn.generateAndStoreToken({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
+meshblu.generateAndStoreToken({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, function(result){
   console.log('generateAndStoreToken');
   console.log(JSON.stringify(result, null, 2));
   // generateAndStoreToken
@@ -358,7 +385,7 @@ conn.generateAndStoreToken({uuid: '78159106-41ca-4022-95e8-2511695ce64c'}, funct
 When generateAndStoreToken is called for a non-existing devices, or devices the authenticated device may not update:
 
 ```javascript
-conn.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
+meshblu.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
   console.log('generateAndStoreToken');
   console.log(JSON.stringify(result, null, 2));
   // generateAndStoreToken
@@ -368,7 +395,7 @@ conn.generateAndStoreToken({uuid: 'i-made-this-uuid-up'}, function(result){
 });
 ```
 
-## conn.message(message)
+## meshblu.message(message)
 
 Send a message to one or more Meshblu devices. In order to send a device a message, the connection must be authenticated as a device that is in the recipient's `message.from` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -387,7 +414,7 @@ Meshblu does not currently provide any receipt confirmation natively. If a messa
 To send a direct message.
 
 ```javascript
-conn.message({
+meshblu.message({
   devices: ['78159106-41ca-4022-95e8-2511695ce64c'],
   topic: 'greeting',
   data: {
@@ -399,7 +426,7 @@ conn.message({
 To send a broadcast message.
 
 ```javascript
-conn.message({
+meshblu.message({
   devices: ['*'],
   topic: 'exclamation',
   data: {
@@ -411,7 +438,7 @@ conn.message({
 To send a message that is simultaneously broadcast and sent directly to a device.
 
 ```javascript
-conn.message({
+meshblu.message({
   devices: ['*', '78159106-41ca-4022-95e8-2511695ce64c'],
   topic: 'recommendation',
   data: {
@@ -420,7 +447,7 @@ conn.message({
 });
 ```
 
-## conn.register(params, callback)
+## meshblu.register(params, callback)
 
 Register a new device with the Meshblu registry.
 
@@ -439,7 +466,7 @@ The Socket.io implementation of Meshblu creates open devices using the old *(dep
 To register a new (open) device
 
 ```javascript
-conn.register({color: 'black'}, function(device){
+meshblu.register({color: 'black'}, function(device){
   console.log('register');
   console.log(JSON.stringify(device, null, 2))
   // {
@@ -470,7 +497,7 @@ conn.register({color: 'black'}, function(device){
 To register a new closed device.
 
 ```javascript
-conn.register({color: 'black', version: '2.0.0'}, function(device){
+meshblu.register({color: 'black', version: '2.0.0'}, function(device){
   console.log('register');
   console.log(JSON.stringify(device, null, 2))
   // {
@@ -487,7 +514,7 @@ conn.register({color: 'black', version: '2.0.0'}, function(device){
 });
 ```
 
-## conn.resetToken(query, callback)
+## meshblu.resetToken(query, callback)
 
 Reset the root token of a device. This will revoke the existing root token,
 generate a new one, and yield the generated token in the callback.
@@ -505,7 +532,7 @@ generate a new one, and yield the generated token in the callback.
 To reset a token for a device:
 
 ```javascript
-conn.resetToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'}, function(response){
+meshblu.resetToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'}, function(response){
   console.log('resetToken');
   console.log(JSON.stringify(device, null, 2));
   // resetToken
@@ -518,7 +545,7 @@ conn.resetToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'}, function(respons
 });
 ```
 
-## conn.revokeToken(auth, callback)
+## meshblu.revokeToken(auth, callback)
 
 Revoke a session token for a device
 
@@ -534,12 +561,12 @@ Revoke a session token for a device
 To revoke a token for a device:
 
 ```javascript
-conn.revokeToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', token: '9e78f644a866e1b5b71d0a2dde912e8662477abf'}, function(){
+meshblu.revokeToken({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', token: '9e78f644a866e1b5b71d0a2dde912e8662477abf'}, function(){
   console.log('revokeToken');
 });
 ```
 
-## conn.subscribe(params)
+## meshblu.subscribe(params)
 
 Create a subscription to a device's messages. Subscribe tries to subscribe the connection to every message type. To limit subscriptions, use the `types` attribute.
 
@@ -557,16 +584,16 @@ Create a subscription to a device's messages. Subscribe tries to subscribe the c
 To subscribe to everything allowed for a device:
 
 ```javascript
-conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
+meshblu.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
 ```
 
 To subscribe to only broadcasts:
 
 ```javascript
-conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
+meshblu.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
 ```
 
-## conn.unregister(query, callback)
+## meshblu.unregister(query, callback)
 
 Remove a device from the Meshblu device registry. In order to unregister a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -588,7 +615,7 @@ In Meshblu, it is not possible to distinguish between a device not existing and 
 When unregister is called for a device the authenticated device may modify:
 
 ```javascript
-conn.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result){
+meshblu.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result){
   console.log('unregister');
   console.log(JSON.stringify(result, null, 2));
   // unregister
@@ -601,7 +628,7 @@ conn.unregister({uuid: 'f52d8b52-ef04-44d3-ae45-59dfec2f7663'}, function(result)
 When unregister is called for a non-existing device, or device the authenticated device may modify:
 
 ```javascript
-conn.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
+meshblu.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
   console.log('unregister');
   console.log(JSON.stringify(result, null, 2));
   // unregister
@@ -611,7 +638,7 @@ conn.unregister({uuid: 'i-made-this-uuid-up'}, function(result){
 });
 ```
 
-## conn.unsubscribe(params)
+## meshblu.unsubscribe(params)
 
 Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe the connection from every message type. To limit what is unsubscribed, use the `types` attribute.
 
@@ -629,16 +656,16 @@ Remove a subscription to a device's messages. Unsubscribe tries to unsubscribe t
 To unsubscribe from everything allowed for a device:
 
 ```javascript
-conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
+meshblu.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b'});
 ```
 
 To unsubscribe from only broadcasts:
 
 ```javascript
-conn.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
+meshblu.subscribe({uuid: '5c7392dc-a4ba-4b5a-8c84-5934a3b3678b', type: ['broadcast']});
 ```
 
-## conn.update(query/update, callback)
+## meshblu.update(query/update, callback)
 
 Update a device in the Meshblu device registry. In order to update a target device, your connection must be authenticated as a device that is in the target device's `configure.update` whitelist. See the [Meshblu whitelist documentation](https://meshblu.readme.io/docs/whitelists-2-0) for more information.
 
@@ -656,7 +683,7 @@ Update a device in the Meshblu device registry. In order to update a target devi
 Updating a device:
 
 ```javascript
-conn.update({uuid: 'c30a7506-7a45-4fe1-ab51-c57afad7f41a', color: 'blue'}, function(result){
+meshblu.update({uuid: 'c30a7506-7a45-4fe1-ab51-c57afad7f41a', color: 'blue'}, function(result){
   console.log('update');
   console.log(JSON.stringify(result, null, 2));
   // update
@@ -670,7 +697,7 @@ conn.update({uuid: 'c30a7506-7a45-4fe1-ab51-c57afad7f41a', color: 'blue'}, funct
 When updating a non-existing devices, or a device the authenticated connection may not update:
 
 ```javascript
-conn.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
+meshblu.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
   console.log('update');
   console.log(JSON.stringify(result, null, 2));
   // update
@@ -681,7 +708,7 @@ conn.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
 });
 ```
 
-## conn.whoami(obj, callback)
+## meshblu.whoami(obj, callback)
 
 Retrieve the device the connection is currently authenticated as from the Meshblu device registery.
 
@@ -697,7 +724,7 @@ Calling whoami:
 When whoami is called:
 
 ```javascript
-conn.whoami({doesnt: 'matter', one: 'bit'}, function(device){
+meshblu.whoami({doesnt: 'matter', one: 'bit'}, function(device){
   console.log('whoami');
   console.log(JSON.stringify(device, null, 2));
   // whoami

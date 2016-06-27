@@ -297,7 +297,7 @@ describe 'Connection', ->
         it 'should send register', ->
           expect(@socket.send).to.have.been.calledWith 'register', {ni: 'Augusta Frank'}
 
-        it 'should yield the device result', ->
+        it 'should yield the register result', ->
           expect(@result).to.deep.equal 'guk'
 
     describe '->resetToken', ->
@@ -330,6 +330,15 @@ describe 'Connection', ->
         it 'emit resetToken with the uuid', ->
           expect(@socket.send).to.have.been.calledWith 'resetToken', uuid:'uuid4', @callback
 
+    describe '->revokeToken', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('revokeToken', {uuid: 'pat'}).yields()
+          @sut.revokeToken {uuid: 'pat'}, (@result) => done()
+
+        it 'should send revokeToken', ->
+          expect(@socket.send).to.have.been.calledWith 'revokeToken', {uuid: 'pat'}
+
     describe '->sign', ->
       describe 'when it is called with a string', ->
         it 'should sign', ->
@@ -358,6 +367,18 @@ describe 'Connection', ->
 
         it 'should send subscribe with the uuid wrapped in an object', ->
           expect(@socket.send).to.have.been.calledWith 'subscribe', uuid: 'upa'
+
+    describe '->unregister', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('unregister', {uuid: 'ruko'}).yields 'tas'
+          @sut.unregister {uuid: 'ruko'}, (@result) => done()
+
+        it 'should send unregister', ->
+          expect(@socket.send).to.have.been.calledWith 'unregister', {uuid: 'ruko'}
+
+        it 'should yield the unregister result', ->
+          expect(@result).to.deep.equal 'tas'
 
     describe '->unsubscribe', ->
       describe 'when called with a uuid', ->
