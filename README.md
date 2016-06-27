@@ -6,6 +6,10 @@
 
 A client side library for using the [Meshblu Socket.IO API](https://meshblu-socketio.readme.io/) in [Node.js](https://nodejs.org)
 
+# NOTICE: Major Version Release
+
+Version 2.0.0 of this library introduces some major API changes that make it incompatible with many of the code samples external to this README. Notably, the library is now instantiated as a class instead of using a `createConnection` function. If the old functionality is required, the latest version of the previous API was `1.34.1`. It is highly recommended that you update to `2.0.0`, as `1.x.x` will not be supported in the future.
+
 # Table of Contents
 
 * [Getting Started](#getting-started)

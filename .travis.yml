@@ -13,19 +13,6 @@ before_script:
 after_script:
 - codeclimate-test-reporter < coverage/lcov.info
 deploy:
-- provider: s3
-  access_key_id: AKIAJH2D5IPIRHYJT5IA
-  secret_access_key:
-    secure: anJi4G4WilNsxBpvskDGimG8BXmBepTJwqEinPiPJ1tyDHQW4njWwnKNzJppXORRwOSPWwHNoJRM0Egr6w1XEPaPM5buXmLn2h6xlzO17Esx5VbP7ioakqzzZtbz2HDM0MO/EtBFsu2zvAjXJvX8gHz2j0srgjvKvGOwq9ngB5s=
-  bucket: octoblu-cdn
-  region: us-west-2
-  skip_cleanup: true
-  detect_encoding: true
-  local-dir: deploy
-  upload-dir: js
-  on:
-    tags: true
-    all_branches: true
 - provider: npm
   skip_cleanup: true
   clean_up: false
@@ -35,10 +22,3 @@ deploy:
   on:
     tags: true
     all_branches: true
-before_deploy:
-- npm install ws browserify
-- mkdir -p deploy/meshblu/$TRAVIS_TAG deploy/meshblu/latest
-- node_modules/.bin/browserify -s meshblu index.js > deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
-- gzip deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
-- mv deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js.gz deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js
-- cp deploy/meshblu/$TRAVIS_TAG/meshblu.bundle.js deploy/meshblu/latest/meshblu.bundle.js
