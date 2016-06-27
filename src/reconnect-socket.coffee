@@ -23,11 +23,11 @@ class ReconnectSocket extends ProxySocket
 
     super # Must be called after @_socket is assigned
 
+  close: (callback) =>
+    @_socket.close callback
+
   connect: (callback) =>
     callback = _.once callback
-
-    @_socket.once 'ready', =>
-      console.log 'ReconnectSocket ready'
 
     onConnectionTimeout = setTimeout (=> @_onConnectionTimeout callback), @_connectionTimeout
 

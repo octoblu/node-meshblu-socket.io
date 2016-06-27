@@ -10,7 +10,7 @@ AsymetricSocket = require '../asymmetric-socket'
 describe 'BufferedSocket', ->
   @timeout 100
 
-  describe '-> constructor', ->
+  describe '->constructor', ->
     describe 'when constructed with srvOptions', ->
       beforeEach ->
         @socket = new AsymetricSocket
@@ -26,12 +26,23 @@ describe 'BufferedSocket', ->
   describe 'with a BufferedSocket', ->
     beforeEach ->
       @socket = new AsymetricSocket
+      @socket.close   = sinon.stub()
       @socket.connect = sinon.stub()
 
       @ReconnectSocket = sinon.spy => @socket
       @sut = new BufferedSocket {}, {@ReconnectSocket}
 
-    describe '-> connect', ->
+    describe '->close', ->
+      describe 'when socket.close yields', ->
+        beforeEach (done) ->
+          @socket.close.yields null
+          @sut.close done
+          @socket.incoming.emit 'close'
+
+        it 'should call socket.close', ->
+          expect(@socket.close).to.have.been.called
+
+    describe '->connect', ->
       describe 'when socket.connect yields', ->
         beforeEach (done) ->
           @socket.connect.yields null
@@ -53,7 +64,7 @@ describe 'BufferedSocket', ->
         it 'should yield the error', ->
           expect(=> throw @error).to.throw 'Whoops'
 
-    describe '-> send', ->
+    describe '->send', ->
       describe 'when called once', ->
         beforeEach (done) ->
           @socket.outgoing.once 'message', => done()

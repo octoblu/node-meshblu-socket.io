@@ -14,9 +14,10 @@ class BufferedSocket extends ProxySocket
 
     super # Must be called after @_socket is assigned
 
+  close: (callback) =>
+    @_socket.close callback
+
   connect: (callback) =>
-    @_socket.once 'ready', =>
-      console.log 'bufferedSocket ready'
     @_socket.connect callback
 
   send: =>

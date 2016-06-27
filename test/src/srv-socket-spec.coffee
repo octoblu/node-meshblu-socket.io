@@ -112,6 +112,7 @@ describe 'SrvSocket spec', ->
         weight: 100
       }]
       @socket = new AsymetricSocket
+      @socket.close = sinon.spy()
       @socketIoClient = sinon.spy(=> @socket)
 
       options = resolveSrv: true, service: 'meshblu', domain: 'octoblu.com', secure: true
@@ -120,6 +121,15 @@ describe 'SrvSocket spec', ->
       @sut = new SrvSocket options, dependencies
       @sut.connect done
       @socket.incoming.emit 'connect'
+
+    describe '->close', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @sut.close done
+          @socket.incoming.emit 'disconnect'
+
+        it 'should call close on the socket', ->
+          expect(@socket.close).to.have.been.called
 
     describe '->send', ->
       describe 'when called', ->

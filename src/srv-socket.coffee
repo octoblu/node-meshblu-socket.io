@@ -11,13 +11,15 @@ class SrvSocket extends ProxySocket
     @_options = {protocol, hostname, port, service, domain, secure, resolveSrv}
     @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true}
 
+  close: (callback) =>
+    @_socket.once 'disconnect', => callback()
+    @_socket.close()
+
   connect: (callback) =>
     @_resolveUri (error, uri) =>
       return callback error if error?
       @_socket = @_socketIoClient(uri, @_socketIoOptions)
       @_socket.once 'connect', => callback()
-      @_socket.once 'ready', =>
-        console.log 'srvSocket ready'
 
       @_proxyDefaultIncomingEvents() # From super
 

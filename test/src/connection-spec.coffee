@@ -19,6 +19,7 @@ describe 'Connection', ->
     @socket = new EventEmitter
     @socket.connect = sinon.stub()
     @socket.send    = sinon.stub()
+    @socket.close   = sinon.stub()
     @BufferedSocket = sinon.spy => @socket
 
   describe '->constructor', ->
@@ -155,17 +156,38 @@ describe 'Connection', ->
           it 'should not re-subscribe to "foo"', ->
             expect(@socket.send).not.to.have.been.called
 
-    describe '->generateKeyPair', ->
-      beforeEach ->
-        {@privateKey, @publicKey} = @sut.generateKeyPair(8)
+    describe '->close', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.close.yields()
+          @sut.close done
 
-      it 'should generate a valid public key', ->
-        publicKey = new NodeRSA @publicKey
-        expect(publicKey.isPublic()).to.be.true
+        it 'should call close on the socket', ->
+          expect(@socket.close).to.have.been.called
 
-      it 'should generate a private key', ->
-        privateKey = new NodeRSA @privateKey
-        expect(privateKey.isPrivate()).not.to.be.false # isPrivate returns false or a BigInt() if true
+    describe '->device', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('device', {rubegbi: 'Estella Campbell'}).yields(device: {ni: 'Isabelle Dennis'})
+          @sut.device {rubegbi: 'Estella Campbell'}, (@result) => done()
+
+        it 'should send device', ->
+          expect(@socket.send).to.have.been.calledWith 'device', {rubegbi: 'Estella Campbell'}
+
+        it 'should yield the device result', ->
+          expect(@result).to.deep.equal device: {ni: 'Isabelle Dennis'}
+
+    describe '->devices', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('devices', {udpogwak: 'Margaret Cook'}).yields(devices: {ijodovaro: 'Johanna James'})
+          @sut.devices {udpogwak: 'Margaret Cook'}, (@result) => done()
+
+        it 'should send devices', ->
+          expect(@socket.send).to.have.been.calledWith 'devices', {udpogwak: 'Margaret Cook'}
+
+        it 'should yield the devices result', ->
+          expect(@result).to.deep.equal devices: {ijodovaro: 'Johanna James'}
 
     describe '->encryptMessage', ->
       beforeEach ->
@@ -229,6 +251,33 @@ describe 'Connection', ->
           expect(decryptedPayload).to.deep.equal 'encrypt-this'
           expect(callback).to.equal @callback
 
+    describe '->generateAndStoreToken', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('generateAndStoreToken', {uuid: 'Brent Anderson'}).yields({
+            uuid: 'Brent Anderson'
+            token: 'pig'
+          })
+          @sut.generateAndStoreToken {uuid: 'Brent Anderson'}, (@result) => done()
+
+        it 'should send generateAndStoreToken', ->
+          expect(@socket.send).to.have.been.calledWith 'generateAndStoreToken', {uuid: 'Brent Anderson'}
+
+        it 'should yield the devices result', ->
+          expect(@result).to.deep.equal uuid: 'Brent Anderson', token: 'pig'
+
+    describe '->generateKeyPair', ->
+      beforeEach ->
+        {@privateKey, @publicKey} = @sut.generateKeyPair(8)
+
+      it 'should generate a valid public key', ->
+        publicKey = new NodeRSA @publicKey
+        expect(publicKey.isPublic()).to.be.true
+
+      it 'should generate a private key', ->
+        privateKey = new NodeRSA @privateKey
+        expect(privateKey.isPrivate()).not.to.be.false # isPrivate returns false or a BigInt() if true
+
     describe '->message', ->
       describe 'when message is called the old way, with one big object', ->
         beforeEach ->
@@ -238,6 +287,18 @@ describe 'Connection', ->
         it 'should call send "message" with an object a devices and payload property', ->
           expectedMessage = {devices: ['456'], payload: {hello: 'world'}}
           expect(@socket.send).to.have.been.calledWith 'message', expectedMessage, @callback
+
+    describe '->register', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('register', {ni: 'Augusta Frank'}).yields 'guk'
+          @sut.register {ni: 'Augusta Frank'}, (@result) => done()
+
+        it 'should send register', ->
+          expect(@socket.send).to.have.been.calledWith 'register', {ni: 'Augusta Frank'}
+
+        it 'should yield the device result', ->
+          expect(@result).to.deep.equal 'guk'
 
     describe '->resetToken', ->
       describe 'when resetToken is called with a uuid', ->
@@ -313,6 +374,18 @@ describe 'Connection', ->
         it 'should send unsubscribe with the uuid wrapped in an object', ->
           expect(@socket.send).to.have.been.calledWith 'unsubscribe', uuid: 'upa'
 
+    describe '->update', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('update', {dap: 'Dustin Waters'}).yields({gawehemeh: 'Melvin Reynolds'})
+          @sut.update {dap: 'Dustin Waters'}, (@result) => done()
+
+        it 'should send update', ->
+          expect(@socket.send).to.have.been.calledWith 'update', {dap: 'Dustin Waters'}
+
+        it 'should yield the update result', ->
+          expect(@result).to.deep.equal gawehemeh: 'Melvin Reynolds'
+
     describe '->verify', ->
       describe 'when it is called with data and a valid signature', ->
         it 'should return true', ->
@@ -322,6 +395,18 @@ describe 'Connection', ->
       describe 'when it is called with data and an invalid signature', ->
         it 'should call NodeRSA#verify', ->
           expect(@sut.verify 'foo', 'definitely-forged').to.be.false
+
+    describe '->whoami', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('whoami', {}).yields {you: 'Lloyd Reese'}
+          @sut.whoami (@result) => done()
+
+        it 'should send whoami', ->
+          expect(@socket.send).to.have.been.calledWith 'whoami', {}
+
+        it 'should yield whoami the result', ->
+          expect(@result).to.deep.equal you: 'Lloyd Reese'
 
     describe 'on "config"', ->
       describe 'when we receive a config event', ->

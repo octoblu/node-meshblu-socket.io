@@ -24,8 +24,17 @@ class Connection extends ProxySocket
     @_socket.on 'ready', @_onReady
     super
 
+  close: (callback) =>
+    @_socket.close callback
+
   connect: (callback) =>
     @_socket.connect(callback)
+
+  device: (query, callback) =>
+    @_socket.send 'device', query, callback
+
+  devices: (query, callback) =>
+    @_socket.send 'devices', query, callback
 
   encryptMessage: (uuid, toEncrypt, message, callback) =>
     if _.isFunction message
@@ -36,6 +45,9 @@ class Connection extends ProxySocket
       return @_console.error "can't find public key for device" if error?
       encryptedPayload = @_encrypt {publicKey, data: toEncrypt}
       @_socket.send 'message', _.defaults({encryptedPayload}, message), callback
+
+  generateAndStoreToken: (query, callback) =>
+    @_socket.send 'generateAndStoreToken', query, callback
 
   generateKeyPair: (bits) =>
     key = new NodeRSA
@@ -51,6 +63,9 @@ class Connection extends ProxySocket
 
   message: (message, callback) =>
     @_socket.send 'message', message, callback
+
+  register: (query, callback) =>
+    @_socket.send 'register', query, callback
 
   resetToken: (data, callback) =>
     data = @_uuidOrObject data
@@ -71,8 +86,14 @@ class Connection extends ProxySocket
 
     @_socket.send 'unsubscribe', data
 
+  update: (query, callback) =>
+    @_socket.send 'update', query, callback
+
   verify: (data, signature) =>
     @_privateKey.verify stableStringify(data), signature, 'utf8', 'base64'
+
+  whoami: (callback) =>
+    @_socket.send 'whoami', {}, callback
 
   _assertNoSrv: ({service, domain, secure}) =>
     throw new Error('resolveSrv is set to false, but received domain')  if domain?

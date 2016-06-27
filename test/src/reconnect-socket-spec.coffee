@@ -26,8 +26,17 @@ describe 'ReconnectSocket', ->
   describe 'when constructed', ->
     beforeEach ->
       @socket = new AsymmetricSocket
+      @socket.close   = sinon.stub()
       @socket.connect = sinon.stub()
       @sut = new ReconnectSocket {backoffMin: 10, connectionTimeout: 10}, {SrvSocket: => @socket}
+
+    describe '->close', ->
+      beforeEach (done) ->
+        @socket.close.yields()
+        @sut.close done
+
+      it 'should call close on the socket', ->
+        expect(@socket.close).to.have.been.called
 
     describe '->connect', ->
       describe 'when connect yields right away', ->
