@@ -5,7 +5,7 @@
 [![Test Coverage](https://codeclimate.com/github/octoblu/meshblu-npm/badges/coverage.svg)](https://codeclimate.com/github/octoblu/meshblu-npm)
 [![Slack Status](http://community-slack.octoblu.com/badge.svg)](http://community-slack.octoblu.com)
 
-[![NPM](https://nodei.co/npm/meshblu-socket.io.svg?style=flat)](https://npmjs.org/package/meshblu-socket.io)
+[![NPM](https://nodei.co/npm/meshblu.svg?style=flat)](https://npmjs.org/package/meshblu)
 
 A client side library for using the [Meshblu Socket.IO API](https://meshblu-socketio.readme.io/) in [Node.js](https://nodejs.org)
 
