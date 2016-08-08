@@ -1,7 +1,17 @@
 {EventEmitter} = require 'events'
 _              = require 'lodash'
 
-PROXIED_EVENTS = [ 'config', 'connect', 'disconnect', 'error', 'identify', 'message', 'notReady', 'ready' ]
+PROXIED_EVENTS = [
+  'config'
+  'connect'
+  'disconnect'
+  'error'
+  'identify'
+  'message'
+  'notReady'
+  'ratelimited'
+  'ready'
+]
 
 class ProxySocket extends EventEmitter
   constructor: ->

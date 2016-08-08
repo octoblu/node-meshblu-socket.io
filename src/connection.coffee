@@ -22,6 +22,7 @@ class Connection extends ProxySocket
     @_socket.on 'identify', @_onIdentify
     @_socket.on 'message', @_onMessage
     @_socket.on 'ready', @_onReady
+    @_socket.on 'ratelimited', @_onRateLimited
     super
 
   close: (callback=->) =>
@@ -154,6 +155,9 @@ class Connection extends ProxySocket
     message.encryptedPayload = @_decrypt({data: message.encryptedPayload}) if message.encryptedPayload?
     @emit 'message', message
 
+  _onRateLimited: (data) =>
+    @emit 'ratelimited', data
+
   _onReady: =>
     _.each @subscriptions, @subscribe
 
@@ -173,6 +177,5 @@ class Connection extends ProxySocket
   _uuidOrObject: (data) =>
     return {uuid: data} if _.isString data
     return data
-
 
 module.exports = Connection

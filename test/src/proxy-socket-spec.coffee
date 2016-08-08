@@ -71,6 +71,15 @@ describe 'ProxySocket', ->
         it 'should proxy the event', ->
           expect(@onNotReady).to.have.been.calledWith lawba: 'Loretta Cannon'
 
+    describe 'on "ratelimited"', ->
+      beforeEach (done) ->
+        @onReady = sinon.spy => done()
+        @sut.once 'ratelimited', @onReady
+        @socket.incoming.emit 'ratelimited', mapjoziw: 'Soozie Whoalzel'
+
+      it 'should proxy the event', ->
+        expect(@onReady).to.have.been.calledWith mapjoziw: 'Soozie Whoalzel'
+
     describe 'on "ready"', ->
       beforeEach (done) ->
         @onReady = sinon.spy => done()

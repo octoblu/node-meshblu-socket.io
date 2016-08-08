@@ -468,3 +468,11 @@ describe 'Connection', ->
 
         it 'should emit the decrypted payload under the encryptedPayload key', ->
           expect(@message.encryptedPayload).to.deep.equal foo: 'bar'
+
+    describe 'on "ratelimited"', ->
+      beforeEach (done) ->
+        @sut.once 'ratelimited', (@data) => done()
+        @socket.emit 'ratelimited', foo: 'bar'
+
+      it 'should emit the rate limited message', ->
+        expect(@data).to.deep.equal foo: 'bar'
