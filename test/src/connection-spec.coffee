@@ -56,10 +56,11 @@ describe 'Connection', ->
     describe 'when constructed with !resolveSrv and no url params', ->
       it 'construct the BufferedSocket with the url params', ->
         BufferedSocket = sinon.spy(=> new EventEmitter)
-        new Connection resolveSrv: false, auth: {}, {BufferedSocket: BufferedSocket}
+        new Connection bufferRate: 1250, resolveSrv: false, auth: {}, {BufferedSocket: BufferedSocket}
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
+          bufferRate: 1250
           srvOptions:
             resolveSrv: false
             protocol: 'wss'
@@ -71,10 +72,11 @@ describe 'Connection', ->
     describe 'when constructed with resolveSrv and no srv params', ->
       it 'construct the BufferedSocket with the srv params', ->
         BufferedSocket = sinon.spy(=> new EventEmitter)
-        new Connection resolveSrv: true, auth: {}, {BufferedSocket: BufferedSocket}
+        new Connection bufferRate: 1520, resolveSrv: true, auth: {}, {BufferedSocket: BufferedSocket}
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
+          bufferRate: 1520
           srvOptions:
             resolveSrv: true
             service: 'meshblu'
@@ -86,10 +88,11 @@ describe 'Connection', ->
     describe 'when constructed with socketio options', ->
       it 'construct the BufferedSocket with the srv params, and the options', ->
         BufferedSocket = sinon.spy(=> new EventEmitter)
-        new Connection options: {forceNew: true}, {BufferedSocket: BufferedSocket}
+        new Connection bufferRate: 1170, options: {forceNew: true}, {BufferedSocket: BufferedSocket}
 
         expect(BufferedSocket).to.have.been.calledWithNew
         expect(BufferedSocket).to.have.been.calledWith {
+          bufferRate: 1170
           srvOptions:
             protocol: 'wss'
             hostname: 'meshblu-socket-io.octoblu.com'

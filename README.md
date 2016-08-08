@@ -205,6 +205,7 @@ Establishes a socket.io connection to meshblu and returns the connection object.
   * `resolveSrv` Enable automatic service resolution using the SRV records.
   * `uuid` UUID of the device to connect with.
   * `token` Token of the device to connect with.
+  * `bufferRate` Rate to throttle commands send to Meshblu. (Default: 100)
 
 ##### Note
 

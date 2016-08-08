@@ -15,9 +15,9 @@ class Connection extends ProxySocket
     @_subscriptions = []
     @_privateKey = new NodeRSA options.privateKey if options.privateKey
 
-    {socket, protocol, hostname, port, service, domain, secure, resolveSrv} = options
+    {socket, protocol, hostname, port, service, domain, secure, resolveSrv, bufferRate} = options
     srvOptions = {protocol, hostname, port, service, domain, secure, resolveSrv, socketIoOptions: options.options}
-    @_socket = @_buildSocket {socket, srvOptions}
+    @_socket = @_buildSocket {socket, srvOptions, bufferRate}
     @_socket.on 'config', @_onConfig
     @_socket.on 'identify', @_onIdentify
     @_socket.on 'message', @_onMessage
@@ -112,16 +112,17 @@ class Connection extends ProxySocket
     throw new Error('resolveSrv is set to true, but received hostname') if hostname?
     throw new Error('resolveSrv is set to true, but received port')     if port?
 
-  _buildSocket: ({socket, srvOptions}) =>
+  _buildSocket: ({socket, srvOptions, bufferRate}) =>
     return socket if socket?
 
-    return @_buildSrvSocket({srvOptions}) if srvOptions.resolveSrv
-    return @_buildUrlSocket({srvOptions})
+    return @_buildSrvSocket({srvOptions, bufferRate}) if srvOptions.resolveSrv
+    return @_buildUrlSocket({srvOptions, bufferRate})
 
-  _buildSrvSocket: ({srvOptions}) =>
+  _buildSrvSocket: ({bufferRate, srvOptions}) =>
     @_assertNoUrl _.pick(srvOptions, 'protocol', 'hostname', 'port')
 
     return new @_BufferedSocket {
+      bufferRate: bufferRate
       srvOptions:
         resolveSrv: true
         service: srvOptions.service ? 'meshblu'
@@ -130,9 +131,10 @@ class Connection extends ProxySocket
         socketIoOptions: srvOptions.socketIoOptions
     }
 
-  _buildUrlSocket: ({srvOptions}) =>
+  _buildUrlSocket: ({bufferRate, srvOptions}) =>
     @_assertNoSrv _.pick(srvOptions, 'service', 'domain', 'secure')
     return new @_BufferedSocket {
+      bufferRate: bufferRate
       srvOptions:
         resolveSrv: false
         protocol: srvOptions.protocol ? 'wss'
