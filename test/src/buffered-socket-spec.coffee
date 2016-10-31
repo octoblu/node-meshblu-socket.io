@@ -8,7 +8,7 @@ BufferedSocket  = require '../../src/buffered-socket'
 AsymetricSocket = require '../asymmetric-socket'
 
 describe 'BufferedSocket', ->
-  @timeout 100
+  @timeout 200
 
   describe '->constructor', ->
     describe 'when constructed with srvOptions', ->

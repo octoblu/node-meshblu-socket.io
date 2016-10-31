@@ -4,7 +4,8 @@ NodeRSA         = require 'node-rsa'
 url             = require 'url'
 
 BufferedSocket = require './buffered-socket'
-ProxySocket    = require './proxy-socket'
+ProxySocket = require './proxy-socket'
+{EventEmitter} = require 'events'
 
 class Connection extends ProxySocket
   constructor: (options, dependencies={}) ->
@@ -18,12 +19,13 @@ class Connection extends ProxySocket
     {socket, protocol, hostname, port, service, domain, secure, resolveSrv, bufferRate} = options
     srvOptions = {protocol, hostname, port, service, domain, secure, resolveSrv, socketIoOptions: options.options}
     @_socket = @_buildSocket {socket, srvOptions, bufferRate}
-    @_socket.on 'config', @_onConfig
-    @_socket.on 'identify', @_onIdentify
-    @_socket.on 'message', @_onMessage
-    @_socket.on 'ready', @_onReady
-    @_socket.on 'ratelimited', @_onRateLimited
     super
+
+    # these must happen after the call to super
+    @_socket.removeAllListeners 'message' # override ProxySocket
+    @_socket.on 'identify', @_onIdentify
+    @_socket.on 'ready', @_onReady
+    @_socket.on 'message', @_onMessage
 
   close: (callback=->) =>
     @_socket.close callback
@@ -149,16 +151,11 @@ class Connection extends ProxySocket
   _encrypt: ({publicKey, data}) =>
     return new NodeRSA(publicKey).encrypt stableStringify(data), 'base64'
 
-  _onConfig: (config) => @emit 'config', config
-
   _onIdentify: => @identify()
 
   _onMessage: (message) =>
     message.encryptedPayload = @_decrypt({data: message.encryptedPayload}) if message.encryptedPayload?
     @emit 'message', message
-
-  _onRateLimited: (data) =>
-    @emit 'ratelimited', data
 
   _onReady: =>
     _.each @subscriptions, @subscribe

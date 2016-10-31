@@ -442,6 +442,16 @@ describe 'Connection', ->
           expect(@config).to.deep.equal za: 'lulivop'
 
     describe 'on "message"', ->
+      describe 'when we receive a message', ->
+        beforeEach (done) ->
+          @sut.on 'message', (@message) =>
+            done()
+
+          @socket.emit 'message', payload: foo: 'bar'
+
+        it 'should emit only once', ->
+          expect(@message.payload).to.deep.equal foo: 'bar'
+
       describe 'when we receive a message with an "encryptedPayload" property', ->
         beforeEach (done) ->
           @sut.once 'message', (@message) => done()
