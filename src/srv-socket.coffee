@@ -12,6 +12,7 @@ class SrvSocket extends ProxySocket
     @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true}
 
   close: (callback) =>
+    return callback() unless @_socket?
     @_socket.once 'disconnect', => callback()
     @_socket.close()
 
