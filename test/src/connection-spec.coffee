@@ -444,7 +444,7 @@ describe 'Connection', ->
     describe 'on "message"', ->
       describe 'when we receive a message', ->
         beforeEach (done) ->
-          @sut.on 'message', (@message) =>
+          @sut.once 'message', (@message) =>
             done()
 
           @socket.emit 'message', payload: foo: 'bar'
