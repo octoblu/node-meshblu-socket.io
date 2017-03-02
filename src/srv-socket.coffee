@@ -15,7 +15,7 @@ class SrvSocket extends ProxySocket
 
     @backoff = new Backoff
 
-    return unless resolveSrv?
+    return unless resolveSrv
     srvProtocol = 'socket-io-wss'
     urlProtocol = 'wss'
 
@@ -23,7 +23,7 @@ class SrvSocket extends ProxySocket
       srvProtocol = 'socket-io-ws'
       urlProtocol = 'ws'
 
-    @_srvFailover = new SrvFailover {domain, service, protocol: srvProtocol, urlProtocol}
+    @_srvFailover = new SrvFailover {domain, service, protocol: srvProtocol, urlProtocol}, dns: @_dns
 
   close: (callback) =>
     return callback() unless @_socket?

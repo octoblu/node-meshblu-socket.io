@@ -101,6 +101,7 @@ describe 'SrvSocket spec', ->
           expect(@socketIoClient).to.have.been.calledWith 'wss://thug.biz:123', {
             some_option: true
             forceNew: true
+            reconnect: false
           }
 
   describe 'with a connected socket', ->
