@@ -37,7 +37,7 @@ Version 2.0.0 of this library introduces some major API changes that make it inc
   * [meshblu.unregister(query, callback)](#meshbluunregisterquery-callback)
   * [meshblu.unsubscribe(params)](#meshbluunsubscribeparams)
   * [meshblu.update(query, callback)](#meshbluupdatequeryupdate-callback)
-  * [meshblu.whoami(obj, callback)](#meshbluwhoamiobj-callback)
+  * [meshblu.whoami(callback)](#meshbluwhoamicallback)
 
 # Getting Started
 
@@ -716,13 +716,12 @@ meshblu.update({uuid: 'i-made-this-uuid-up', color: 'blue'}, function(result){
 });
 ```
 
-## meshblu.whoami(obj, callback)
+## meshblu.whoami(callback)
 
 Retrieve the device the connection is currently authenticated as from the Meshblu device registery.
 
 ##### Arguments
 
-* `obj` Object. Anything may be put here, but it will be ignored. Is preserved for backwards compatibility.
 * `callback` Function that will be called with a `device`.
   * `device` Full device from the Meshblu device registry.
 
@@ -732,7 +731,7 @@ Calling whoami:
 When whoami is called:
 
 ```javascript
-meshblu.whoami({doesnt: 'matter', one: 'bit'}, function(device){
+meshblu.whoami(function(device){
   console.log('whoami');
   console.log(JSON.stringify(device, null, 2));
   // whoami

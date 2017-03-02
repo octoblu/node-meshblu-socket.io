@@ -1,6 +1,8 @@
+Backoff        = require 'backo'
 dns            = require 'dns'
 _              = require 'lodash'
 socketIoClient = require 'socket.io-client'
+SrvFailover    = require 'srv-failover'
 url            = require 'url'
 ProxySocket    = require './proxy-socket'
 
@@ -9,7 +11,19 @@ class SrvSocket extends ProxySocket
     @_socketIoClient = dependencies.socketIoClient ? socketIoClient
     @_dns = dependencies.dns ? dns
     @_options = {protocol, hostname, port, service, domain, secure, resolveSrv}
-    @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true}
+    @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true, reconnect: false}
+
+    @backoff = new Backoff
+
+    return unless resolveSrv?
+    srvProtocol = 'socket-io-wss'
+    urlProtocol = 'wss'
+
+    if secure == false
+      srvProtocol = 'socket-io-ws'
+      urlProtocol = 'ws'
+
+    @_srvFailover = new SrvFailover {domain, service, protocol: srvProtocol, urlProtocol}
 
   close: (callback) =>
     return callback() unless @_socket?
@@ -17,10 +31,16 @@ class SrvSocket extends ProxySocket
     @_socket.close()
 
   connect: (callback) =>
+    callback = _.once callback
+
     @_resolveUri (error, uri) =>
       return callback error if error?
       @_socket = @_socketIoClient(uri, @_socketIoOptions)
       @_socket.once 'connect', => callback()
+      @_socket.once 'connect_error', (error) =>
+        return callback error unless @_srvFailover?
+        @_srvFailover.markBadUrl uri, ttl: 60000
+        _.delay @connect, @backoff.duration(), callback
 
       @_proxyDefaultIncomingEvents() # From super
 
@@ -41,13 +61,15 @@ class SrvSocket extends ProxySocket
     return 'socket-io-ws'
 
   _resolveUri: (callback) =>
-    {protocol, hostname, port, resolveSrv} = @_options
-    return callback null, url.format({protocol, hostname, port, slashes: true}) unless resolveSrv
+    {protocol, hostname, port} = @_options
+    return callback null, url.format({protocol, hostname, port, slashes: true}) unless @_srvFailover?
 
-    @_dns.resolveSrv @_getSrvAddress(), (error, addresses) =>
+    return @_srvFailover.resolveUrl (error, baseUrl) =>
+      if error && error.noValidAddresses
+        @_srvFailover.clearBadUrls()
+        return @_resolveUri callback
       return callback error if error?
-      return callback new Error('SRV record found, but contained no valid addresses') if _.isEmpty addresses
-      return callback null, @_resolveUrlFromAddresses(addresses)
+      return callback null, baseUrl
 
   _resolveUrlFromAddresses: (addresses) =>
     address = _.minBy addresses, 'priority'
