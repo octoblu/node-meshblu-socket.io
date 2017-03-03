@@ -342,6 +342,16 @@ describe 'Connection', ->
         it 'should send revokeToken', ->
           expect(@socket.send).to.have.been.calledWith 'revokeToken', {uuid: 'pat'}
 
+    describe '->revokeTokenByQuery', ->
+      describe 'when called', ->
+        beforeEach (done) ->
+          @socket.send.withArgs('revokeTokenByQuery', {uuid: 'pat', tag: 'hi'}).yields()
+          @sut.revokeTokenByQuery {uuid: 'pat', tag: 'hi'}, (@result) => done()
+
+        it 'should send revokeTokenByQuery', ->
+          expect(@socket.send).to.have.been.calledWith 'revokeTokenByQuery', {uuid: 'pat', tag: 'hi'}
+
+
     describe '->sign', ->
       describe 'when it is called with a string', ->
         it 'should sign', ->

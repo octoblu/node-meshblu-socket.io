@@ -77,6 +77,9 @@ class Connection extends ProxySocket
   revokeToken: (auth, callback) =>
     @_socket.send 'revokeToken', auth, callback
 
+  revokeTokenByQuery: (data, callback) =>
+    @_socket.send 'revokeTokenByQuery', data, callback
+
   sign: (data) =>
     @_privateKey.sign stableStringify(data), 'base64'
 
