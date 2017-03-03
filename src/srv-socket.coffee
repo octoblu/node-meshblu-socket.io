@@ -11,7 +11,7 @@ class SrvSocket extends ProxySocket
     @_socketIoClient = dependencies.socketIoClient ? socketIoClient
     @_dns = dependencies.dns ? dns
     @_options = {protocol, hostname, port, service, domain, secure, resolveSrv}
-    @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true, reconnect: false}
+    @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true, reconnection: false}
 
     @backoff = new Backoff
 
