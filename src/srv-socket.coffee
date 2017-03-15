@@ -1,18 +1,13 @@
 Backoff        = require 'backo'
-dns            = require 'dns'
 _              = require 'lodash'
-socketIoClient = require 'socket.io-client'
 SrvFailover    = require 'srv-failover'
 url            = require 'url'
 ProxySocket    = require './proxy-socket'
 
 class SrvSocket extends ProxySocket
-  constructor: ({protocol, hostname, port, service, domain, secure, resolveSrv, socketIoOptions}, dependencies={}) ->
-    @_socketIoClient = dependencies.socketIoClient ? socketIoClient
-    @_dns = dependencies.dns ? dns
+  constructor: ({protocol, hostname, port, service, domain, secure, resolveSrv, socketIoOptions}, @dependencies={}) ->
     @_options = {protocol, hostname, port, service, domain, secure, resolveSrv}
     @_socketIoOptions = _.defaults {}, socketIoOptions, {forceNew: true, reconnection: false}
-
     @backoff = new Backoff
 
     return unless resolveSrv
@@ -23,7 +18,7 @@ class SrvSocket extends ProxySocket
       srvProtocol = 'socket-io-ws'
       urlProtocol = 'ws'
 
-    @_srvFailover = new SrvFailover {domain, service, protocol: srvProtocol, urlProtocol}, dns: @_dns
+    @_srvFailover = new SrvFailover {domain, service, protocol: srvProtocol, urlProtocol}, dns: @dependencies.dns
 
   close: (callback) =>
     return callback() unless @_socket?
@@ -31,21 +26,25 @@ class SrvSocket extends ProxySocket
     @_socket.close()
 
   connect: (callback) =>
-    callback = _.once callback
+    throw new Error 'connect should not take a callback' if callback?
+
+    delete require.cache[require.resolve('socket.io-client')]
+    socketIoClient = require 'socket.io-client'
+    _socketIoClient = @dependencies.socketIoClient ? socketIoClient
 
     @_resolveUri (error, uri) =>
-      return callback error if error?
-      @_socket = @_socketIoClient(uri, @_socketIoOptions)
-      @_socket.once 'connect', => callback()
+      return @emit 'resolve-uri:error', error if error?
+      @_socket = _socketIoClient(uri, @_socketIoOptions)
+      @_socket.once 'connect', => @backoff.reset()
       @_socket.once 'connect_error', (error) =>
-        return callback error unless @_srvFailover?
-        @_srvFailover.markBadUrl uri, ttl: 60000
-        _.delay @connect, @backoff.duration(), callback
+        @_srvFailover.markBadUrl uri, ttl: 60000 if @_srvFailover?
+        backoff = @backoff.duration()
+        _.delay @connect, backoff
 
       @_proxyDefaultIncomingEvents() # From super
 
   send: =>
-    @_socket.emit arguments...
+    @_socket.emit arguments... if @_socket?
 
   _getSrvAddress: =>
     {service, domain} = @_options

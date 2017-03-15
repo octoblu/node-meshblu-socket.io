@@ -112,9 +112,8 @@ describe 'Connection', ->
 
     describe 'dealing with readiness', ->
       describe 'when connected', ->
-        beforeEach (done) ->
-          @sut.connect done
-          @socket.connect.yield null
+        beforeEach ->
+          @sut.connect()
           @socket.emit 'connect'
 
         it 'should send identity with the uuid and token on identify', ->
@@ -126,9 +125,8 @@ describe 'Connection', ->
           }
 
       describe 'when connect, then ready', ->
-        beforeEach (done) ->
-          @sut.connect done
-          @socket.connect.yield null
+        beforeEach ->
+          @sut.connect()
           @socket.emit 'ready', {uuid: 'cats', token: 'dogs'}
 
         describe 'when subscribe is called', ->

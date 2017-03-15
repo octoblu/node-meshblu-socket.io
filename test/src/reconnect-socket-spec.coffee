@@ -27,7 +27,6 @@ describe 'ReconnectSocket', ->
     beforeEach ->
       @socket = new AsymmetricSocket
       @socket.close   = sinon.stub()
-      @socket.connect = sinon.stub()
       @sut = new ReconnectSocket {backoffMin: 10, connectionTimeout: 10}, {SrvSocket: => @socket}
 
     describe '->close', ->
@@ -40,24 +39,12 @@ describe 'ReconnectSocket', ->
 
     describe '->connect', ->
       describe 'when connect yields right away', ->
-        beforeEach (done) ->
-          @socket.connect.yields()
-          @sut.connect done
+        beforeEach ->
+          @socket.connect = sinon.stub()
+          @sut.connect()
 
         it 'should call socket.connect', ->
           expect(@socket.connect).to.have.been.called
-
-      describe 'when socket.connect takes too long to yield (never yields)', ->
-        beforeEach (done) ->
-          @onNotReady = sinon.spy()
-          @sut.on 'notReady', @onNotReady
-          @sut.connect (@error) => done()
-
-        it 'should yield an error', ->
-          expect(=> throw @error).to.throw 'Connection Timeout'
-
-        it 'should emit "notReady"', ->
-          expect(@onNotReady).to.have.been.calledWith {status: 504, message: 'Connection Timeout'}
 
     describe '->send', ->
       describe 'when called', ->
@@ -68,47 +55,3 @@ describe 'ReconnectSocket', ->
 
         it 'should call socket.send', ->
           expect(@socket.send).to.have.been.called
-
-    describe 'on "notReady"', ->
-      describe 'when a rate-limiting "notReady" is emitted with no error', ->
-        beforeEach (done) ->
-          @sut.once 'notReady', => done()
-          @socket.incoming.emit 'notReady', lawba: 'Loretta Cannon'
-
-        it 'should not try to reconnect', ->
-          expect(@socket.connect).not.to.have.been.called
-
-      describe 'when a rate-limiting "notReady" is emitted with 429 error code (and we wait 75ms)', ->
-        beforeEach (done) ->
-          @socket.incoming.emit 'notReady', error: {code: 429}
-          _.delay done, 75
-
-        it 'should attempt to reconnect the socket', ->
-          expect(@socket.connect).to.have.been.called
-
-        describe 'when a second rate-limiting "notReady" is emitted with 429 error code', ->
-          beforeEach ->
-            @socket.connect.reset()
-            @socket.incoming.emit 'notReady', error: {code: 429}
-
-          it 'should not attempt to reconnect the socket', ->
-            expect(@socket.connect).not.to.have.been.called
-
-          describe 'when we wait 90ms', ->
-            beforeEach (done) ->
-              @timeout 110
-              _.delay done, 100
-
-            it 'should attempt to reconnect the socket', ->
-              expect(@socket.connect).to.have.been.called
-
-        describe 'when a 30 more rate-limiting "notReady" are emitted with 429 error code', ->
-          beforeEach ->
-            @socket.connect.reset()
-            _.times 30, => @socket.incoming.emit 'notReady', error: {code: 429}
-
-          it 'should not attempt to reconnect the socket', ->
-            expect(@socket.connect).not.to.have.been.called
-
-          it 'should set the timeout way into the future', ->
-            expect(@sut._reconnectTimeout._idleTimeout).to.be.greaterThan 1000000

@@ -44,25 +44,12 @@ describe 'BufferedSocket', ->
 
     describe '->connect', ->
       describe 'when socket.connect yields', ->
-        beforeEach (done) ->
-          @socket.connect.yields null
-          @sut.connect done
+        beforeEach ->
+          @sut.connect()
           @socket.incoming.emit 'connect'
 
         it 'should call socket.connect', ->
           expect(@socket.connect).to.have.been.called
-
-      describe 'when socket.connect yields an error', ->
-        beforeEach (done) ->
-          @socket.connect.yields new Error 'Whoops'
-          @sut.connect (@error) => done()
-          @socket.incoming.emit 'connect'
-
-        it 'should call socket.connect', ->
-          expect(@socket.connect).to.have.been.called
-
-        it 'should yield the error', ->
-          expect(=> throw @error).to.throw 'Whoops'
 
     describe '->send', ->
       describe 'when called once', ->

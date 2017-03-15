@@ -8,7 +8,7 @@ ProxySocket = require './proxy-socket'
 {EventEmitter} = require 'events'
 
 class Connection extends ProxySocket
-  constructor: (options, dependencies={}) ->
+  constructor: (options={}, dependencies={}) ->
     @_BufferedSocket = dependencies.BufferedSocket ? BufferedSocket
     @_console        = dependencies.console ? console
 
@@ -30,8 +30,9 @@ class Connection extends ProxySocket
   close: (callback=->) =>
     @_socket.close callback
 
-  connect: (callback=->) =>
-    @_socket.connect(callback)
+  connect: (callback) =>
+    throw new Error 'connect should not take a callback' if callback?
+    @_socket.connect()
 
   device: (query, callback) =>
     @_socket.send 'device', query, callback

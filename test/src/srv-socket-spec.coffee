@@ -20,14 +20,14 @@ describe 'SrvSocket spec', ->
         @sut = new SrvSocket options, dependencies
 
       describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
+        beforeEach 'making the request', ->
           @dns.resolveSrv.withArgs('_meshblu._socket-io-wss.octoblu.com').yields null, [{
             name: 'mesh.biz'
             port: 34
             priority: 1
             weight: 100
           }]
-          @sut.connect done
+          @sut.connect()
           @socket.incoming.emit 'connect'
 
         it 'should call request with the resolved url', ->
@@ -45,14 +45,14 @@ describe 'SrvSocket spec', ->
         @sut = new SrvSocket options, dependencies
 
       describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
+        beforeEach 'making the request', ->
           @dns.resolveSrv.withArgs('_meshblu._socket-io-ws.octoblu.com').yields null, [{
             name: 'insecure.xxx'
             port: 80
             priority: 1
             weight: 100
           }]
-          @sut.connect done
+          @sut.connect()
           @socket.emit 'connect'
 
         it 'should call request with the resolved url', ->
@@ -69,8 +69,8 @@ describe 'SrvSocket spec', ->
         @sut = new SrvSocket options, dependencies
 
       describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @sut.connect done
+        beforeEach 'making the request', ->
+          @sut.connect()
           @socket.emit 'connect'
 
         it 'should call request with the formatted url', ->
@@ -93,8 +93,8 @@ describe 'SrvSocket spec', ->
         @sut = new SrvSocket options, dependencies
 
       describe 'when connect is called', ->
-        beforeEach 'making the request', (done) ->
-          @sut.connect done
+        beforeEach 'making the request', ->
+          @sut.connect()
           @socket.emit 'connect'
 
         it 'should call request with the formatted url', ->
@@ -105,7 +105,7 @@ describe 'SrvSocket spec', ->
           }
 
   describe 'with a connected socket', ->
-    beforeEach (done) ->
+    beforeEach ->
       @dns = resolveSrv: sinon.stub().yields null, [{
         name: 'secure.bikes'
         port: 443
@@ -120,7 +120,7 @@ describe 'SrvSocket spec', ->
       dependencies = {@dns, @socketIoClient}
 
       @sut = new SrvSocket options, dependencies
-      @sut.connect done
+      @sut.connect()
       @socket.incoming.emit 'connect'
 
     describe '->close', ->

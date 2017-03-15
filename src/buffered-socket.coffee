@@ -18,7 +18,8 @@ class BufferedSocket extends ProxySocket
     @_socket.close callback
 
   connect: (callback) =>
-    @_socket.connect callback
+    throw new Error 'connect should not take a callback' if callback?
+    @_socket.connect()
 
   send: =>
     @_sendQueue.push arguments
