@@ -4,8 +4,8 @@ ProxySocket = require './proxy-socket'
 SrvSocket   = require './srv-socket'
 
 DEFAULT_BACKOFF_MIN = 0
-DEFAULT_BACKOFF_MAX = 60 * 1000
-DEFAULT_CONNECTION_TIMEOUT = 60 * 1000
+DEFAULT_BACKOFF_MAX = 30 * 1000
+DEFAULT_CONNECTION_TIMEOUT = 30 * 1000
 DEFAULT_JITTER = 0.5
 
 class ReconnectSocket extends ProxySocket
@@ -35,7 +35,6 @@ class ReconnectSocket extends ProxySocket
 
   connect: (callback) =>
     throw new Error 'connect should not take a callback' if callback?
-    @_socketSetup()
     @_connectTimeout = setTimeout @_onConnectionTimeout, @_connectionTimeout
     @_socket.connect()
 

@@ -12,8 +12,7 @@ describe 'ProxySocket', ->
     beforeEach ->
       @socket = new AsymetricSocket
       @socket.connect = sinon.stub().yields null
-      @sut = new ProxySocket
-      @sut._socket = @socket
+      @sut = new ProxySocket {@socket}
       @sut._proxyDefaultIncomingEvents()
 
     describe 'on "config"', ->

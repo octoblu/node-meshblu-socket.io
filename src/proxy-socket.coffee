@@ -14,8 +14,8 @@ PROXIED_EVENTS = [
 ]
 
 class ProxySocket extends EventEmitter
-  constructor: ->
-    return unless @_socket?
+  constructor:  ({socket}) ->
+    @_socket = socket if socket?
     @_proxyDefaultIncomingEvents()
 
   _proxyIncomingEvent: (event) =>
