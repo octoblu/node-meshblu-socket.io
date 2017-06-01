@@ -1,14 +1,13 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "license": "MIT",
   "homepage": "https://developer.octoblu.com",
   "repository": "git://github.com/octoblu/meshblu-npm",
   "author": "Octoblu <sqrt@octoblu.com>",
   "main": "./dist/index.js",
   "scripts": {
-    "preinstall": "node -e \"try{require('./skip-install.js')}catch(e){}\"",
     "build": "gulp",
     "test": "mocha"
   },
@@ -35,11 +34,6 @@
     "tar": "^2.1.1",
     "url": "^0.11.0"
   },
-  "bundledDependencies": [
-    "request",
-    "tar",
-    "fstream"
-  ],
   "devDependencies": {
     "chai": "^3.5.0",
     "gulp": "^3.9.1",
