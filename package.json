@@ -1,14 +1,14 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "license": "MIT",
   "homepage": "https://developer.octoblu.com",
   "repository": "git://github.com/octoblu/meshblu-npm",
   "author": "Octoblu <sqrt@octoblu.com>",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "gulp",
+    "build": "coffee --compile --output dist/ --map src/*.coffee",
     "test": "mocha"
   },
   "keywords": [
@@ -36,10 +36,6 @@
   "devDependencies": {
     "chai": "^4.0.1",
     "coffee-script": "^1.12.6",
-    "gulp": "^3.9.1",
-    "gulp-clean": "^0.3.2",
-    "gulp-coffee": "^2.3.4",
-    "gulp-concat": "^2.6.0",
     "meshblu-config": "^8.0.0",
     "mocha": "^3.4.2",
     "sinon": "^2.3.2",
