@@ -1,7 +1,7 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "license": "MIT",
   "homepage": "https://developer.octoblu.com",
   "repository": "git://github.com/octoblu/meshblu-npm",
@@ -29,7 +29,7 @@
     "node-rsa": "^0.4.2",
     "request": "^2.81.0",
     "socket.io-client": "^1.3.5",
-    "srv-failover": "^1.3.1",
+    "srv-failover": "^2.0.0",
     "tar": "^2.1.1",
     "url": "^0.11.0"
   },
