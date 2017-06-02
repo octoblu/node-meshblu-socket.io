@@ -1,7 +1,7 @@
 {
   "name": "meshblu",
   "description": "Meshblu IoT network and API",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "license": "MIT",
   "homepage": "https://developer.octoblu.com",
   "repository": "git://github.com/octoblu/meshblu-npm",
@@ -36,7 +36,7 @@
   "devDependencies": {
     "chai": "^4.0.1",
     "coffee-script": "^1.12.6",
-    "meshblu-config": "^8.0.0",
+    "meshblu-config": "^8.0.1",
     "mocha": "^3.4.2",
     "sinon": "^2.3.2",
     "sinon-chai": "^2.10.0"
