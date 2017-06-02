@@ -1,17 +1,9 @@
-sudo: false
 language: node_js
 node_js:
-- '5'
-addons:
-  code_climate:
-    repo_token: e1261e23abb980b8a5321630d8ddb27cc282d834777060f98cb2472544bea4eb
+- '7'
 branches:
   only:
     - "/^v[0-9]/"
-before_script:
-- npm install -g codeclimate-test-reporter
-after_script:
-- codeclimate-test-reporter < coverage/lcov.info
 before_deploy:
 - npm run build
 deploy:
